@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <array>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
@@ -11,7 +11,7 @@ class Quad
 
         void init()
         {
-            const std::vector<GLfloat> quadVertices
+            const std::array<GLfloat, 20> quadVertices
             {
                 -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, // Bottom left
                 1.0f, -1.0f, 0.0f,  1.0f, 0.0f, // Bottom right
