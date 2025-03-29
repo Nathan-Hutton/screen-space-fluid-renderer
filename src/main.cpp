@@ -35,8 +35,9 @@ int main(int argc, char** argv)
 
     // compileShaders();
     cam = Camera(screenWidth, screenHeight);
+    sim.LoadModel();
 
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
     glutReshapeFunc(resizeWindow);

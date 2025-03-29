@@ -1,5 +1,7 @@
 #include "Model.h"
 #include <filesystem>
+#include <stdlib.h>
+#include <linux/limits.h>
 
 using path = std::filesystem::path;
 
@@ -55,9 +57,21 @@ void Model::Unbind()
 
 void Model::CompileShaders(const char* vertFile, const char* fragFile)
 {
-    bool compiled = program->BuildFiles(vertFile, fragFile);
+    char absVert[PATH_MAX];
+    char absFrag[PATH_MAX];
+
+    realpath(vertFile, absVert);
+    realpath(fragFile, absFrag);
+
+    std::cout << absVert << std::endl;
+    std::cout << absFrag << std::endl;
+
+    bool compiled = program->BuildFiles(absVert, absFrag);
+
     if (!compiled) {
         fprintf(stderr, "Error: could not compile shaders\n");
+    } else {
+        fprintf(stdout, "Shaders compiled!");
     }
 }
 
@@ -74,7 +88,10 @@ void Model::calcTrans() {
 void Model::LoadOBJFile(char const* filename) {
     mesh = new cy::TriMesh();
 
-    bool loadedMesh = mesh->LoadFromFileObj(filename, true);
+    char objPath[PATH_MAX];
+    realpath(filename, objPath);
+
+    bool loadedMesh = mesh->LoadFromFileObj(objPath, true);
     if (!loadedMesh) {
         fprintf(stderr, "Error: '%s'\n", "unable to load obj file");
         mesh = NULL;
@@ -87,8 +104,6 @@ void Model::LoadOBJFile(char const* filename) {
     prepareBuffers();
     DifTexSetup();
     SpcTexSetup();
-
-    //return myMesh;
 }
 
 void Model::prepareBuffers()

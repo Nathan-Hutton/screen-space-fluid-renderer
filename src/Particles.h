@@ -1,8 +1,6 @@
 #pragma once
 
 // #include <filesystem>
-#include <stdlib.h>
-#include <linux/limits.h>
 #include "GL/glew.h"
 #include "GL/freeglut.h"
 #include "Model.h"
@@ -19,24 +17,13 @@ private:
     float* positions;   // the positions of all the particles
     Model* sphere;      // sphere representing points
 
-    void loadModel()
-    {
-        char objPath[PATH_MAX];
-        realpath("../data/sphere.obj", objPath);
 
-        sphere = new Model();
-        sphere->LoadOBJFile(objPath);
-        sphere->CompileShaders("../shaders/test.vert", "../shaders/test.frag");
-        sphere->Initialize();
-    }
 public:
     Particles()
     {
         count = 0;
         radius = 1.0f;
         positions = nullptr;
-
-        loadModel();
     }
 
     void Render(Camera* cam)
@@ -53,9 +40,16 @@ public:
             sphere->Bind();
 
             glDrawElements(GL_TRIANGLES, sphere->GetLength(), GL_UNSIGNED_INT, 0);
-            // std::cout << "hiiii :3" << std::endl;
             
             sphere->Unbind();
         }
+    }
+
+    void LoadModel()
+    {
+        sphere = new Model();
+        sphere->LoadOBJFile("../data/sphere.obj");
+        sphere->CompileShaders("../shaders/test.vert", "../shaders/test.frag");
+        sphere->Initialize();
     }
 };
