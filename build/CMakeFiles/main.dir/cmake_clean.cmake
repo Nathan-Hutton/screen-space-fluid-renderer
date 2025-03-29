@@ -1,4 +1,10 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/main.dir/src/Camera.cpp.o"
+  "CMakeFiles/main.dir/src/Camera.cpp.o.d"
+  "CMakeFiles/main.dir/src/Model.cpp.o"
+  "CMakeFiles/main.dir/src/Model.cpp.o.d"
+  "CMakeFiles/main.dir/src/lodepng.cpp.o"
+  "CMakeFiles/main.dir/src/lodepng.cpp.o.d"
   "CMakeFiles/main.dir/src/main.cpp.o"
   "CMakeFiles/main.dir/src/main.cpp.o.d"
   "main"

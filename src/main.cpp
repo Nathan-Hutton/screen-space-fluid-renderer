@@ -1,11 +1,13 @@
 #include <iostream>
-#include "Input.h"
-#include "ShaderHandler.h"
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "Input.h"
+#include "ShaderHandler.h"
+#include "Camera.h"
+#include "Particles.h"
+
+Camera cam;
+Particles sim = Particles();
 
 void resizeWindow(int width, int height);
 void renderScene();
@@ -31,15 +33,14 @@ int main(int argc, char** argv)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    compileShaders();
+    // compileShaders();
+    cam = Camera(screenWidth, screenHeight);
 
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
     glutReshapeFunc(resizeWindow);
     glutKeyboardFunc(processInput);
-
-    glViewport(0, 0, screenWidth, screenHeight);
 
     glutMainLoop();
 
@@ -54,6 +55,8 @@ void update()
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    sim.Render(&cam);
 
     glutSwapBuffers();
 }

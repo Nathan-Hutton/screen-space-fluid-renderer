@@ -1,4 +1,4 @@
-# Install script for directory: /home/nathan/school/6610/final
+# Install script for directory: /home/martinss/Documents/6610/screen-space-fluid-renderer
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/nathan/school/6610/final/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/martinss/Documents/6610/screen-space-fluid-renderer/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

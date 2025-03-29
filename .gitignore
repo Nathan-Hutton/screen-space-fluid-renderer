@@ -1,4 +1,5 @@
 build/*
+data/*
 report/*.swp
 report/*.aux
 report/*.log
