@@ -1,3 +1,0 @@
-/home/martinss/Documents/6610/screen-space-fluid-renderer/build/CMakeFiles/main.dir
-/home/martinss/Documents/6610/screen-space-fluid-renderer/build/CMakeFiles/edit_cache.dir
-/home/martinss/Documents/6610/screen-space-fluid-renderer/build/CMakeFiles/rebuild_cache.dir
