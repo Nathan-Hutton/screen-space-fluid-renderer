@@ -71,7 +71,7 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
     if (!compiled) {
         fprintf(stderr, "Error: could not compile shaders\n");
     } else {
-        fprintf(stdout, "Shaders compiled!");
+        fprintf(stdout, "Shaders compiled!\n");
     }
 }
 

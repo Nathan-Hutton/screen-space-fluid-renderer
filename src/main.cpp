@@ -5,9 +5,11 @@
 #include "ShaderHandler.h"
 #include "Camera.h"
 #include "Particles.h"
+#include "CacheHandler.h"
 
 Camera cam;
 Particles sim = Particles();
+CacheHandler ch = CacheHandler();
 
 void resizeWindow(int width, int height);
 void renderScene();
@@ -36,6 +38,8 @@ int main(int argc, char** argv)
     // compileShaders();
     cam = Camera(screenWidth, screenHeight);
     sim.LoadModel();
+
+    ch.LoadFile("../data/Armadillo/FluidFrame/frame.0167.pos", &sim);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);

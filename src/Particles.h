@@ -1,6 +1,7 @@
 #pragma once
 
 // #include <filesystem>
+#include <vector>
 #include "GL/glew.h"
 #include "GL/freeglut.h"
 #include "Model.h"
@@ -12,10 +13,10 @@
 class Particles
 {
 private:
-    unsigned int count; // the number of particles
-    float radius;       // the radius of the the particles
-    float* positions;   // the positions of all the particles
-    Model* sphere;      // sphere representing points
+    unsigned int        count;      // the number of particles
+    float               radius;     // the radius of the the particles
+    std::vector<float>  positions;  // the positions of all the particles
+    Model*              sphere;     // sphere representing points
 
 
 public:
@@ -23,12 +24,12 @@ public:
     {
         count = 0;
         radius = 1.0f;
-        positions = nullptr;
+        positions = {};
     }
 
     void Render(Camera* cam)
     {
-        if (!positions) {
+        if (positions.empty()) {
             cy::Matrix4f mvp = cam->GetProj() * cam->GetView();
 
             cy::GLSLProgram* program = sphere->GetProgram();
@@ -51,5 +52,18 @@ public:
         sphere->LoadOBJFile("../data/sphere.obj");
         sphere->CompileShaders("../shaders/test.vert", "../shaders/test.frag");
         sphere->Initialize();
+    }
+
+    void SetFrameData(unsigned int numParticles, float nRadius)
+    {
+        count = numParticles;
+        radius = nRadius;
+    }
+    unsigned int GetCount() { return count; }
+    std::vector<float>* GetPosBuffer() { return &positions; }
+
+    void AllocatePositions(unsigned int numParticles)
+    {
+        positions.resize(numParticles);
     }
 };

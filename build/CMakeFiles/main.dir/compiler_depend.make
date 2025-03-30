@@ -1108,8 +1108,12 @@ CMakeFiles/main.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/include/X11/keysymdef.h \
   /usr/include/GL/glxext.h \
   /usr/include/inttypes.h \
-  ../src/lodepng.h
+  ../src/lodepng.h \
+  ../src/CacheHandler.h \
+  /usr/include/linux/limits.h
 
+
+../src/CacheHandler.h:
 
 ../src/Particles.h:
 
