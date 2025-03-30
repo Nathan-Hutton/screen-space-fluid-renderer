@@ -1,5 +1,6 @@
 build/*
 data/*
+.vscode/*
 report/*.swp
 report/*.aux
 report/*.log
