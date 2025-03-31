@@ -31,7 +31,8 @@ public:
     {
         // get absolute path to the file
         char absCache[PATH_MAX];
-        realpath(filepath, absCache);
+        if (realpath(filepath, absCache) == nullptr)
+            perror("realpath failed");
 
         // open the file
         std::ifstream file(absCache, std::ios::binary | std::ios::ate);

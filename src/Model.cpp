@@ -60,8 +60,10 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
     char absVert[PATH_MAX];
     char absFrag[PATH_MAX];
 
-    realpath(vertFile, absVert);
-    realpath(fragFile, absFrag);
+    if (realpath(vertFile, absVert) == nullptr)
+        perror("realpath failed");
+    if (realpath(fragFile, absFrag) == nullptr)
+        perror("realpath failed");
 
     std::cout << absVert << std::endl;
     std::cout << absFrag << std::endl;
@@ -89,7 +91,8 @@ void Model::LoadOBJFile(char const* filename) {
     mesh = new cy::TriMesh();
 
     char objPath[PATH_MAX];
-    realpath(filename, objPath);
+    if (realpath(filename, objPath) == nullptr)
+        perror("realpath failed");
 
     bool loadedMesh = mesh->LoadFromFileObj(objPath, true);
     if (!loadedMesh) {
