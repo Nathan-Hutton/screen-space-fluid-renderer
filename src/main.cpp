@@ -35,11 +35,13 @@ int main(int argc, char** argv)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+
     // compileShaders();
     cam = Camera(screenWidth, screenHeight);
+    cam.SetPos(0.0f, 0.42f, -1.68f);
     sim.LoadModel();
 
-    ch.LoadFile("../data/Armadillo/FluidFrame/frame.0167.pos", &sim);
+    ch.LoadFile("../data/DamBreakLucy/FluidFrame/frame.0001.pos", &sim);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -56,6 +58,7 @@ void update()
 {
     // Put something here
 }
+
 
 void renderScene()
 {

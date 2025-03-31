@@ -22,7 +22,7 @@
 
 Camera::Camera(int width, int height) {
     fov = M_PI / 3;
-    nearClip = 1.0;
+    nearClip = 0.001;
     farClip = 1000.0;
 
     camDist = 30;
@@ -43,7 +43,7 @@ Camera::Camera(int width, int height) {
 void Camera::calcView() {
     // camera transform
     cy::Matrix4f camTrans = cy::Matrix4f();
-    camTrans.SetTranslation(cy::Vec3f(0, 0, -camDist));
+    camTrans.SetTranslation(cy::Vec3f(xpos, ypos, zpos));
 
     cy::Matrix4f camXRot = cy::Matrix4f();
     camXRot.SetRotationX(xRot);
