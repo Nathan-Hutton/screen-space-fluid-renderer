@@ -29,8 +29,8 @@ public:
 
     void Render(Camera* cam)
     {
-        cy::Vec3f from = cy::Vec3f(-3.86f, 2.6f, 5.7f);
-        cy::Vec3f at = cy::Vec3f(0.22f, 2.08f, 0.12f);
+        cy::Vec3f from = cy::Vec3f(-3.96f, 2.52f, 3.56f);
+        cy::Vec3f at = cy::Vec3f(0.0f, 0.46f, -0.1f);
 
         if (positions.empty()) {
             cy::Matrix4f mvp = cam->GetProj() * cam->GetView();
