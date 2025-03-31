@@ -106,18 +106,18 @@ public:
             return false;
         }
 
+        char padded[5];
+        snprintf(padded, sizeof(padded), "%04d", currentFrame);
+
         char currentFramePath[PATH_MAX];
-        memccpy(currentFramePath, simFolder, 0, (size_t)PATH_MAX);
-        //char* padded = intToPadZeroes(currentFrame);
-
-        strcat(currentFramePath, "/FluidFrame/frame.");
-        strcat(currentFramePath, intToPadZeroes(currentFrame));
-        strcat(currentFramePath, ".pos");
-
-        // strcat(currentFramePath, "/FluidFrame/frame.0001.pos");
+        if (snprintf(currentFramePath, PATH_MAX, "%s/FluidFrame/frame.%s.pos", simFolder, padded) >= PATH_MAX) {
+            fprintf(stderr, "Warning: Path was truncated!\n");
+            return false;
+        }
 
         LoadFile(currentFramePath, sim);
 
         return true;
     }
+
 };

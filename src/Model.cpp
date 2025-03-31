@@ -65,16 +65,13 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
     if (realpath(fragFile, absFrag) == nullptr)
         printf("realpath failed in Model::CompileShader(): No such file or directory: %s\n", vertFile);
 
-    std::cout << absVert << std::endl;
-    std::cout << absFrag << std::endl;
+    //std::cout << absVert << std::endl;
+    //std::cout << absFrag << std::endl;
 
     bool compiled = program->BuildFiles(absVert, absFrag);
 
-    if (!compiled) {
+    if (!compiled)
         fprintf(stderr, "Error: could not compile shaders\n");
-    } else {
-        fprintf(stdout, "Shaders compiled!\n");
-    }
 }
 
 void Model::calcTrans() {
