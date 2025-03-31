@@ -40,6 +40,7 @@ public:
             // return false;
             fprintf(stderr, "Error: Could not open cache file\n");
             fprintf(stderr, "%s", absCache);
+            printf("\n\n");
             return;
         }
 
