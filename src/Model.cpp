@@ -61,9 +61,9 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
     char absFrag[PATH_MAX];
 
     if (realpath(vertFile, absVert) == nullptr)
-        perror("realpath failed");
+        printf("realpath failed: No such file or directory: %s\n", vertFile);
     if (realpath(fragFile, absFrag) == nullptr)
-        perror("realpath failed");
+        printf("realpath failed: No such file or directory: %s\n", vertFile);
 
     std::cout << absVert << std::endl;
     std::cout << absFrag << std::endl;
@@ -92,7 +92,7 @@ void Model::LoadOBJFile(char const* filename) {
 
     char objPath[PATH_MAX];
     if (realpath(filename, objPath) == nullptr)
-        perror("realpath failed");
+        printf("realpath failed: No such file or directory: %s\n", filename);
 
     bool loadedMesh = mesh->LoadFromFileObj(objPath, true);
     if (!loadedMesh) {
