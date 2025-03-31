@@ -270,7 +270,7 @@ void Model::SetVerts(std::vector<float> vertData)
 {
     buffers->elements.clear();
     unsigned int count = 0;
-    for (int i = 0; i < vertData.size(); i += 3) {
+    for (size_t i = 0; i < vertData.size(); i += 3) {
         if (i + 1 > vertData.size() || i + 2 > vertData.size()) {
             std::cout << "nuh-uh" << std::endl;
             buffers->verts.clear();
@@ -283,7 +283,7 @@ void Model::SetVerts(std::vector<float> vertData)
 }
 void Model::SetNorms(std::vector<float> normData)
 {
-    for (int i = 0; i < normData.size(); i += 3) {
+    for (size_t i = 0; i < normData.size(); i += 3) {
         if (i + 1 > normData.size() || i + 2 > normData.size()) {
             std::cout << "nuh-uh" << std::endl;
             buffers->norms.clear();
@@ -294,7 +294,7 @@ void Model::SetNorms(std::vector<float> normData)
 }
 void Model::SetTexts(std::vector<float> textData)
 {
-    for (int i = 0; i < textData.size(); i += 2) {
+    for (size_t i = 0; i < textData.size(); i += 2) {
         buffers->texts.push_back(cy::Vec2(textData[i], textData[i + 1]));
     }
 }

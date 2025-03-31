@@ -399,6 +399,7 @@ inline bool TriMesh::LoadFromFileObj( char const *filename, bool loadMtl, std::o
 								face.v[0] = face.v[1] = face.v[2] = 0;
 								textureFace.v[0] = textureFace.v[1] = textureFace.v[2] = 0;
 								normalFace. v[0] = normalFace. v[1] = normalFace. v[2] = 0;
+                                // fallthrough
 							case 0:
 							case 1:
 								facevert++;

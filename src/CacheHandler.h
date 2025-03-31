@@ -38,7 +38,7 @@ public:
         if(!file.is_open()) {
             // return false;
             fprintf(stderr, "Error: Could not open cache file\n");
-            fprintf(stderr, absCache);
+            fprintf(stderr, "%s", absCache);
             return;
         }
 
@@ -70,7 +70,7 @@ public:
 
     void LoadSim(const char* simName)
     {
-        if (simName == "SphereDropGround") {
+        if (std::strcmp(simName, "SphereDropGround") == 0) {
             startFrame = 1;
             endFrame = 160;
             currentFrame = 0;
@@ -78,7 +78,7 @@ public:
             from = cy::Vec3f(0.93f, 0.47f, 1.51f);
             at = cy::Vec3f(0.42f, 0.07f, 0.54f);
         }
-        else if (simName == "Armadillo") {
+        else if (strcmp(simName, "Armadillo")) {
             startFrame = 139;
             endFrame = 240;
             currentFrame = 138;
@@ -86,7 +86,7 @@ public:
             from = cy::Vec3f(0.0f, 0.42f, -1.68f);
             at = cy::Vec3f(0.0f, 0.38f, 0.0f);
         }
-        else if (simName == "DamBreakLucy") {
+        else if (strcmp(simName, "DamBreakLucy")) {
             startFrame = 1;
             endFrame = 360;
             currentFrame = 0;
@@ -106,7 +106,7 @@ public:
 
         char currentFramePath[PATH_MAX];
         memccpy(currentFramePath, simFolder, 0, (size_t)PATH_MAX);
-        char* padded = intToPadZeroes(currentFrame);
+        //char* padded = intToPadZeroes(currentFrame);
 
         strcat(currentFramePath, "/FluidFrame/frame.");
         strcat(currentFramePath, intToPadZeroes(currentFrame));
@@ -115,5 +115,7 @@ public:
         // strcat(currentFramePath, "/FluidFrame/frame.0001.pos");
 
         LoadFile(currentFramePath, sim);
+
+        return true;
     }
 };

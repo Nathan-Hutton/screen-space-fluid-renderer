@@ -1298,7 +1298,7 @@ inline void _CY_APIENTRY GLDebugCallback::Callback( GLenum source,
                                                     GLenum type,
                                                     GLuint id,
                                                     GLenum severity,
-                                                    GLsizei length,
+                                                    [[maybe_unused]] GLsizei length,
                                                     GLchar const* message,
                                                     void const* userParam )
 {
@@ -1384,8 +1384,8 @@ void GLTexture<TEXTURE_TYPE>::SetFilteringMode(GLenum magnificationFilter, GLenu
 template <GLenum TEXTURE_TYPE>
 inline void GLRenderBuffer<TEXTURE_TYPE>::Delete()
 {
-	if ( framebufferID != CY_GL_INVALID_ID ) glDeleteFramebuffers (1,&framebufferID); framebufferID = CY_GL_INVALID_ID; 
-	if ( depthbufferID != CY_GL_INVALID_ID ) glDeleteRenderbuffers(1,&depthbufferID); depthbufferID = CY_GL_INVALID_ID; 
+	if ( framebufferID != CY_GL_INVALID_ID ){ glDeleteFramebuffers (1,&framebufferID); framebufferID = CY_GL_INVALID_ID;} 
+	if ( depthbufferID != CY_GL_INVALID_ID ){ glDeleteRenderbuffers(1,&depthbufferID); depthbufferID = CY_GL_INVALID_ID;} 
 	texture.Delete();
 }
 

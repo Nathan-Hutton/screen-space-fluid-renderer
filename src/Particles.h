@@ -50,7 +50,7 @@ public:
             return;
         }
 
-        for (int i = 0; i < count; i++) {
+        for (size_t i = 0; i < count; i++) {
             cy::Vec3f translation = cy::Vec3f(positions[i*3], positions[i*3+1], positions[i*3+2]);
             cy::Matrix4f mvp = cam->GetProj() * cam->GetView(from, at) * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(radius);
 
