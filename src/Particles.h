@@ -7,85 +7,80 @@
 #include "Model.h"
 #include "Camera.h"
 
-// using path = std::filesystem::path;
-
 /* Stores the current state of the fluid particles at 1 frame */
 class Particles
 {
 private:
-    unsigned int        count;      // the number of particles
-    float               radius;     // the radius of the the particles
-    std::vector<float>  positions;  // the positions of all the particles
-    Model*              sphere;     // sphere representing points
+    unsigned int        m_count;      // the number of particles
+    float               m_radius;     // the radius of the the particles
+    std::vector<float>  m_positions;  // the positions of all the particles
+    Model*              m_sphere;     // sphere representing points
 
 
 public:
     Particles()
     {
-        count = 0;
-        radius = 1.0f;
-        positions = {};
+        m_count = 0;
+        m_radius = 1.0f;
+        m_positions = {};
     }
 
-    void Render(Camera* cam)
+    void Render(Camera* cam) const
     {
-        cy::Vec3f from = cy::Vec3f(-3.96f, 2.52f, 3.56f);
-        cy::Vec3f at = cy::Vec3f(0.0f, 0.46f, -0.1f);
+        const cy::Vec3f from = cy::Vec3f(-3.96f, 2.52f, 3.56f);
+        const cy::Vec3f at = cy::Vec3f(0.0f, 0.46f, -0.1f);
 
-        if (positions.empty()) {
-            cy::Matrix4f mvp = cam->GetProj() * cam->GetView();
+        cy::GLSLProgram* program = m_sphere->GetProgram();
+        program->Bind();
 
-            cy::GLSLProgram* program = sphere->GetProgram();
+        if (m_positions.empty()) {
+            const cy::Matrix4f mvp = cam->GetProj() * cam->GetView();
 
-            program->Bind();
             program->RegisterUniform(0, "mvp");
             program->SetUniformMatrix4(0, &mvp[0]);
 
-            sphere->Bind();
+            m_sphere->Bind();
 
-            glDrawElements(GL_TRIANGLES, sphere->GetLength(), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, m_sphere->GetLength(), GL_UNSIGNED_INT, 0);
             
-            sphere->Unbind();
+            m_sphere->Unbind();
 
             return;
         }
 
-        for (size_t i = 0; i < count; i++) {
-            cy::Vec3f translation = cy::Vec3f(positions[i*3], positions[i*3+1], positions[i*3+2]);
-            cy::Matrix4f mvp = cam->GetProj() * cam->GetView(from, at) * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(radius);
+        for (size_t i = 0; i < m_count; i++) {
+            const cy::Vec3f translation = cy::Vec3f(m_positions[i*3], m_positions[i*3+1], m_positions[i*3+2]);
+            const cy::Matrix4f mvp = cam->GetProj() * cam->GetView(from, at) * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(m_radius);
 
-            cy::GLSLProgram* program = sphere->GetProgram();
-
-            program->Bind();
             program->RegisterUniform(0, "mvp");
             program->SetUniformMatrix4(0, &mvp[0]);
 
-            sphere->Bind();
+            m_sphere->Bind();
 
-            glDrawElements(GL_TRIANGLES, sphere->GetLength(), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, m_sphere->GetLength(), GL_UNSIGNED_INT, 0);
             
-            sphere->Unbind();
+            m_sphere->Unbind();
         }
     }
 
     void LoadModel()
     {
-        sphere = new Model();
-        sphere->LoadOBJFile("../data/sphere.obj");
-        sphere->CompileShaders("../shaders/test.vert", "../shaders/test.frag");
-        sphere->Initialize();
+        m_sphere = new Model();
+        m_sphere->LoadOBJFile("../data/sphere.obj");
+        m_sphere->CompileShaders("../shaders/test.vert", "../shaders/test.frag");
+        m_sphere->Initialize();
     }
 
     void SetFrameData(unsigned int numParticles, float nRadius)
     {
-        count = numParticles;
-        radius = nRadius;
+        m_count = numParticles;
+        m_radius = nRadius;
     }
-    unsigned int GetCount() { return count; }
-    std::vector<float>* GetPosBuffer() { return &positions; }
+    unsigned int GetCount() const { return m_count; }
+    std::vector<float>* GetPosBuffer() { return &m_positions; }
 
     void AllocatePositions(unsigned int numParticles)
     {
-        positions.resize(numParticles);
+        m_positions.resize(numParticles);
     }
 };

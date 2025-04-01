@@ -21,20 +21,20 @@
 //}
 
 Camera::Camera(int width, int height) {
-    fov = M_PI / 3;
-    nearClip = 0.001;
-    farClip = 1000.0;
+    m_fov = M_PI / 3;
+    m_nearClip = 0.001;
+    m_farClip = 1000.0;
 
-    camDist = 30;
-    zRot = 0;
+    m_camDist = 30;
+    m_zRot = 0;
     //xRot = -M_PI/2;
-    yRot = 0;
-    xRot = 0;
+    m_yRot = 0;
+    m_xRot = 0;
 
-    imWidth = width;
-    imHeight = height;
+    m_imWidth = width;
+    m_imHeight = height;
 
-    ortho = false;
+    m_ortho = false;
 
     calcView();
     calcProj();
@@ -43,40 +43,40 @@ Camera::Camera(int width, int height) {
 void Camera::calcView() {
     // camera transform
     cy::Matrix4f camTrans = cy::Matrix4f();
-    camTrans.SetTranslation(cy::Vec3f(xpos, ypos, zpos));
+    camTrans.SetTranslation(cy::Vec3f(m_xPos, m_yPos, m_zPos));
 
     cy::Matrix4f camXRot = cy::Matrix4f();
-    camXRot.SetRotationX(xRot);
+    camXRot.SetRotationX(m_xRot);
 
     cy::Matrix4f camYRot = cy::Matrix4f();
-    camYRot.SetRotationY(yRot);
+    camYRot.SetRotationY(m_yRot);
 
     cy::Matrix4f camZRot = cy::Matrix4f();
-    camZRot.SetRotationZ(zRot);
+    camZRot.SetRotationZ(m_zRot);
 
-    view = camTrans * camXRot * camYRot * camZRot;
+    m_view = camTrans * camXRot * camYRot * camZRot;
 }
 
 void Camera::calcProj() {
-    projection.Zero();
+    m_projection.Zero();
 
-    if (ortho) {
-        float r = 2 * camDist * std::tan(fov / 2);
-        float l = -r;
-        float t = r * imHeight / imWidth;
-        float b = -t;
+    if (m_ortho) {
+        const float r = 2 * m_camDist * std::tan(m_fov / 2);
+        const float l = -r;
+        const float t = r * m_imHeight / m_imWidth;
+        const float b = -t;
 
-        projection[0] = 2 / (r - l);
-        projection[5] = 2 / (t - b);
-        projection[10] = -2 / (farClip - nearClip);
-        projection[15] = 1;
+        m_projection[0] = 2 / (r - l);
+        m_projection[5] = 2 / (t - b);
+        m_projection[10] = -2 / (m_farClip - m_nearClip);
+        m_projection[15] = 1;
 
-        projection[14] = -((farClip + nearClip) / (farClip - nearClip));
+        m_projection[14] = -((m_farClip + m_nearClip) / (m_farClip - m_nearClip));
 
     }
     else {
-        float aspect = float(imWidth) / imHeight;
-        projection.SetPerspective(fov, aspect, nearClip, farClip);
+        const float aspect = float(m_imWidth) / m_imHeight;
+        m_projection.SetPerspective(m_fov, aspect, m_nearClip, m_farClip);
     }
 }
 
@@ -86,16 +86,16 @@ cy::Matrix4f Camera::GetReflView(float height)
     flip.cell[5] = -1.0f;
 
     cy::Matrix4f camTrans = cy::Matrix4f();
-    camTrans.SetTranslation(cy::Vec3f(0, 0, -camDist));
+    camTrans.SetTranslation(cy::Vec3f(0, 0, -m_camDist));
 
     cy::Matrix4f camXRot = cy::Matrix4f();
-    camXRot.SetRotationX(xRot);
+    camXRot.SetRotationX(m_xRot);
 
     cy::Matrix4f camYRot = cy::Matrix4f();
-    camYRot.SetRotationY(yRot);
+    camYRot.SetRotationY(m_yRot);
 
     cy::Matrix4f camZRot = cy::Matrix4f();
-    camZRot.SetRotationZ(zRot);
+    camZRot.SetRotationZ(m_zRot);
     
     cy::Matrix4f postTrans = cy::Matrix4f();
     postTrans.SetTranslation(cy::Vec3f(0, 2*height, 0));

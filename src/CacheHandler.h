@@ -9,22 +9,22 @@
 class CacheHandler
 {
 private:
-    unsigned int startFrame;
-    unsigned int endFrame;
-    unsigned int currentFrame;
-    char simFolder[PATH_MAX];
+    unsigned int m_startFrame;
+    unsigned int m_endFrame;
+    unsigned int m_currentFrame;
+    char m_simFolder[PATH_MAX];
     std::vector<unsigned char> m_VReadBuffer;
 public:
-    cy::Vec3f from;
-    cy::Vec3f at;
+    cy::Vec3f m_from;
+    cy::Vec3f m_at;
 
     CacheHandler()
     {
-        startFrame = endFrame = currentFrame = 0;
-        simFolder[0] = '\0';
-        strcat(simFolder, "../data/");
-        from = cy::Vec3f();
-        at = cy::Vec3f();
+        m_startFrame = m_endFrame = m_currentFrame = 0;
+        m_simFolder[0] = '\0';
+        strcat(m_simFolder, "../data/");
+        m_from = cy::Vec3f();
+        m_at = cy::Vec3f();
     }
 
     void LoadFile(const char* filepath, Particles* sim)    // read in data from a fluid frame file
@@ -73,44 +73,44 @@ public:
     void LoadSim(const char* simName)
     {
         if (std::strcmp(simName, "SphereDropGround") == 0) {
-            startFrame = 1;
-            endFrame = 160;
-            currentFrame = 0;
+            m_startFrame = 1;
+            m_endFrame = 160;
+            m_currentFrame = 0;
 
-            from = cy::Vec3f(0.93f, 0.47f, 1.51f);
-            at = cy::Vec3f(0.42f, 0.07f, 0.54f);
+            m_from = cy::Vec3f(0.93f, 0.47f, 1.51f);
+            m_at = cy::Vec3f(0.42f, 0.07f, 0.54f);
         }
         else if (strcmp(simName, "Armadillo")) {
-            startFrame = 139;
-            endFrame = 240;
-            currentFrame = 138;
+            m_startFrame = 139;
+            m_endFrame = 240;
+            m_currentFrame = 138;
 
-            from = cy::Vec3f(0.0f, 0.42f, -1.68f);
-            at = cy::Vec3f(0.0f, 0.38f, 0.0f);
+            m_from = cy::Vec3f(0.0f, 0.42f, -1.68f);
+            m_at = cy::Vec3f(0.0f, 0.38f, 0.0f);
         }
         else if (strcmp(simName, "DamBreakLucy")) {
-            startFrame = 1;
-            endFrame = 360;
-            currentFrame = 0;
+            m_startFrame = 1;
+            m_endFrame = 360;
+            m_currentFrame = 0;
 
-            from = cy::Vec3f(-3.86f, 2.6f, 5.7f);
-            at = cy::Vec3f(0.22f, 2.08f, 0.12f);
+            m_from = cy::Vec3f(-3.86f, 2.6f, 5.7f);
+            m_at = cy::Vec3f(0.22f, 2.08f, 0.12f);
         }
-        strcat(simFolder, simName);
+        strcat(m_simFolder, simName);
     }
 
     bool LoadNextFrame(Particles* sim)
     {
-        currentFrame++;
-        if (currentFrame > endFrame || currentFrame < startFrame) {
+        m_currentFrame++;
+        if (m_currentFrame > m_endFrame || m_currentFrame < m_startFrame) {
             return false;
         }
 
         char padded[5];
-        snprintf(padded, sizeof(padded), "%04d", currentFrame);
+        snprintf(padded, sizeof(padded), "%04d", m_currentFrame);
 
         char currentFramePath[PATH_MAX];
-        if (snprintf(currentFramePath, PATH_MAX, "%s/FluidFrame/frame.%s.pos", simFolder, padded) >= PATH_MAX) {
+        if (snprintf(currentFramePath, PATH_MAX, "%s/FluidFrame/frame.%s.pos", m_simFolder, padded) >= PATH_MAX) {
             fprintf(stderr, "Warning: Path was truncated!\n");
             return false;
         }

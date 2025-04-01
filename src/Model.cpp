@@ -6,31 +6,31 @@
 using path = std::filesystem::path;
 
 Model::Model() {
-	xPos = 0;
-	yPos = 0;
-	zPos = 0;
-    xRot = 0;
-    yRot = 0;
-    zRot = 0;
-	modelTrans = cy::Matrix4f();
+	m_xPos = 0;
+	m_yPos = 0;
+	m_zPos = 0;
+    m_xRot = 0;
+    m_yRot = 0;
+    m_zRot = 0;
+	m_modelTrans = cy::Matrix4f();
 
-	mesh = NULL;
-	buffers = new MeshBuffers();
-    objFilename = NULL;
-    program = new cy::GLSLProgram();
+	m_mesh = NULL;
+	m_buffers = new MeshBuffers();
+    m_objFilename = NULL;
+    m_program = new cy::GLSLProgram();
 }
 
 Model::~Model() {
-    if (mesh) {
-        delete mesh;
+    if (m_mesh) {
+        delete m_mesh;
     }
-    if (buffers) {
-        delete buffers;
+    if (m_buffers) {
+        delete m_buffers;
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(3, VBO);
-    glDeleteBuffers(1, &eBuffer);
+    glDeleteVertexArrays(1, &m_VAO);
+    glDeleteBuffers(3, m_VBO);
+    glDeleteBuffers(1, &m_eBuffer);
 }
 
 void Model::Initialize()
@@ -42,13 +42,13 @@ void Model::Initialize()
 void Model::Bind()
 {
     // bind our VAO
-    glBindVertexArray(VAO);
+    glBindVertexArray(m_VAO);
 
     // bind the element buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_eBuffer);
 }
 
-void Model::Unbind()
+void Model::Unbind() const
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -68,7 +68,7 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
     //std::cout << absVert << std::endl;
     //std::cout << absFrag << std::endl;
 
-    bool compiled = program->BuildFiles(absVert, absFrag);
+    const bool compiled = m_program->BuildFiles(absVert, absFrag);
 
     if (!compiled)
         fprintf(stderr, "Error: could not compile shaders\n");
@@ -76,30 +76,30 @@ void Model::CompileShaders(const char* vertFile, const char* fragFile)
 
 void Model::calcTrans() {
     cy::Matrix4f rotations = cy::Matrix4f();
-    rotations.SetRotationXYZ(xRot, yRot, zRot);
+    rotations.SetRotationXYZ(m_xRot, m_yRot, m_zRot);
 
     cy::Matrix4f translations = cy::Matrix4f();
-    translations.SetTranslation(cy::Vec3f(xPos, yPos, zPos));
+    translations.SetTranslation(cy::Vec3f(m_xPos, m_yPos, m_zPos));
 
-    modelTrans = rotations * translations;
+    m_modelTrans = rotations * translations;
 }
 
 void Model::LoadOBJFile(char const* filename) {
-    mesh = new cy::TriMesh();
+    m_mesh = new cy::TriMesh();
 
     char objPath[PATH_MAX];
     if (realpath(filename, objPath) == nullptr)
         printf("realpath failed in Model::LoadObjFile(): No such file or directory: %s\n", filename);
 
-    bool loadedMesh = mesh->LoadFromFileObj(objPath, true);
+    bool loadedMesh = m_mesh->LoadFromFileObj(objPath, true);
     if (!loadedMesh) {
         fprintf(stderr, "Error: '%s'\n", "unable to load obj file");
-        mesh = NULL;
+        m_mesh = NULL;
         return;
     }
-    fprintf(stdout, "OBJ loaded. # of verticies: '%d'\n", mesh->NV());
+    fprintf(stdout, "OBJ loaded. # of verticies: '%d'\n", m_mesh->NV());
 
-    objFilename = filename;
+    m_objFilename = filename;
 
     prepareBuffers();
     DifTexSetup();
@@ -108,28 +108,28 @@ void Model::LoadOBJFile(char const* filename) {
 
 void Model::prepareBuffers()
 {
-    int faceCount = mesh->NF();
+    const int faceCount = m_mesh->NF();
 
-    buffers = new MeshBuffers();
+    m_buffers = new MeshBuffers();
 
     unsigned int counter = 0;
 
     // for each face
     for (int i = 0; i < faceCount; i++) {
-        cy::TriMesh::TriFace faceVerts = mesh->F(i);
-        cy::TriMesh::TriFace faceNorms = mesh->FN(i);
-        cy::TriMesh::TriFace faceTexts = mesh->FT(i);
+        const cy::TriMesh::TriFace m_faceVerts = m_mesh->F(i);
+        const cy::TriMesh::TriFace m_faceNorms = m_mesh->FN(i);
+        const cy::TriMesh::TriFace m_faceTexts = m_mesh->FT(i);
 
         //for each vertex (we know its always 3)
         for (int j = 0; j < 3; j++) {
-            unsigned int vertIdx = faceVerts.v[j];
-            unsigned int normIdx = faceNorms.v[j];
-            unsigned int textIdx = faceTexts.v[j];
+            const unsigned int vertIdx = m_faceVerts.v[j];
+            const unsigned int normIdx = m_faceNorms.v[j];
+            const unsigned int textIdx = m_faceTexts.v[j];
 
-            buffers->verts.push_back(mesh->V(vertIdx));
-            buffers->norms.push_back(mesh->VN(normIdx));
-            buffers->texts.push_back(cy::Vec2f(mesh->VT(textIdx)));
-            buffers->elements.push_back(counter++);
+            m_buffers->m_verts.push_back(m_mesh->V(vertIdx));
+            m_buffers->m_norms.push_back(m_mesh->VN(normIdx));
+            m_buffers->m_texts.push_back(cy::Vec2f(m_mesh->VT(textIdx)));
+            m_buffers->m_elements.push_back(counter++);
         }
     }
 
@@ -137,37 +137,35 @@ void Model::prepareBuffers()
 }
 
 void Model::CenterModel() {
-    if (!mesh) {
+    if (!m_mesh) {
         return;
     }
 
     // get bounding box data
-    mesh->ComputeBoundingBox();
-    cy::Vec3f boxMin = mesh->GetBoundMin();
-    cy::Vec3f boxMax = mesh->GetBoundMax();
+    m_mesh->ComputeBoundingBox();
+    const cy::Vec3f boxMin = m_mesh->GetBoundMin();
+    const cy::Vec3f boxMax = m_mesh->GetBoundMax();
 
-    xPos = -(boxMax[0] + boxMin[0]) / 2;
-    yPos = -(boxMax[1] + boxMin[1]) / 2;
-    zPos = -(boxMax[2] + boxMin[2]) / 2;
+    m_xPos = -(boxMax[0] + boxMin[0]) / 2;
+    m_yPos = -(boxMax[1] + boxMin[1]) / 2;
+    m_zPos = -(boxMax[2] + boxMin[2]) / 2;
 }
 
 void Model::DifTexSetup() {
-    if (!mesh) {
+    if (!m_mesh)
         return;
-    }
 
     // get texture data
     // assuming one material for now bc i'm lazy
-    if (mesh->NM() == 0) return;
-    cy::TriMesh::Mtl mat = mesh->M(0);
+    if (m_mesh->NM() == 0) return;
+    const cy::TriMesh::Mtl mat = m_mesh->M(0);
 
     cy::TriMesh::Str difMap = mat.map_Kd;
-    if (!difMap) {
+    if (!difMap)
         return;
-    }
 
-    path parent = path(objFilename).parent_path();
-    path difPath = parent / path(difMap.data);
+    const path parent = path(m_objFilename).parent_path();
+    const path difPath = parent / path(difMap.data);
 
     // setting up the diffuse texture
     std::vector<unsigned char> png;
@@ -180,30 +178,28 @@ void Model::DifTexSetup() {
     //if there's an error, display it
     if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 
-    difTex.Initialize();
-    difTex.SetImage(&image[0], 4, width, height);
-    difTex.BuildMipmaps();
-    difTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
-    difTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
+    m_difTex.Initialize();
+    m_difTex.SetImage(&image[0], 4, width, height);
+    m_difTex.BuildMipmaps();
+    m_difTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+    m_difTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
 }
 
 void Model::SpcTexSetup() {
-    if (!mesh) {
+    if (!m_mesh)
         return;
-    }
 
     // get texture data
     // assuming one material for now bc i'm lazy
-    if (mesh->NM() == 0) return;
-    cy::TriMesh::Mtl mat = mesh->M(0);
+    if (m_mesh->NM() == 0) return;
+    const cy::TriMesh::Mtl mat = m_mesh->M(0);
 
     cy::TriMesh::Str spcMap = mat.map_Ks;
-    if (!spcMap) {
+    if (!spcMap)
         return;
-    }
 
-    path parent = path(objFilename).parent_path();
-    path spcPath = parent / path(spcMap.data);
+    const path parent = path(m_objFilename).parent_path();
+    const path spcPath = parent / path(spcMap.data);
 
     std::vector<unsigned char> png;
     std::vector<unsigned char> image;
@@ -214,38 +210,38 @@ void Model::SpcTexSetup() {
     if (!error) error = lodepng::decode(image, width, height, png);
     if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 
-    spcTex.Initialize();
-    spcTex.SetImage(&image[0], 4, width, height);
-    spcTex.BuildMipmaps();
-    spcTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
-    spcTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
+    m_spcTex.Initialize();
+    m_spcTex.SetImage(&image[0], 4, width, height);
+    m_spcTex.BuildMipmaps();
+    m_spcTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+    m_spcTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
 }
 
 void Model::createVertexArray()
 {
-    int size = buffers->verts.size();
+    const int size = m_buffers->m_verts.size();
     // initialize the vao
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    glGenVertexArrays(1, &m_VAO);
+    glBindVertexArray(m_VAO);
 
     // initializing the vbos
-    glGenBuffers(1, &VBO[0]);   //position buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec3f) * size, &(buffers->verts[0]), GL_STATIC_DRAW);
+    glGenBuffers(1, &m_VBO[0]);   //position buffer
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec3f) * size, &(m_buffers->m_verts[0]), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
 
-    glGenBuffers(1, &VBO[1]);   //normals buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec3f) * size, &(buffers->norms[0]), GL_STATIC_DRAW);
+    glGenBuffers(1, &m_VBO[1]);   //normals buffer
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec3f) * size, &(m_buffers->m_norms[0]), GL_STATIC_DRAW);
 
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
 
-    glGenBuffers(1, &VBO[2]);   //texCoords buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec2f) * size, &(buffers->texts[0]), GL_STATIC_DRAW);
+    glGenBuffers(1, &m_VBO[2]);   //texCoords buffer
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cy::Vec2f) * size, &(m_buffers->m_texts[0]), GL_STATIC_DRAW);
 
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(2);
@@ -259,25 +255,24 @@ void Model::createElementBuffer()
 {
     createVertexArray();
 
-    elementsLength = buffers->elements.size();
+    m_elementsLength = m_buffers->m_elements.size();
 
-    glGenBuffers(1, &eBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * elementsLength, &(buffers->elements[0]), GL_STATIC_DRAW);
+    glGenBuffers(1, &m_eBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_eBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * m_elementsLength, &(m_buffers->m_elements[0]), GL_STATIC_DRAW);
 }
 
 void Model::SetVerts(std::vector<float> vertData)
 {
-    buffers->elements.clear();
+    m_buffers->m_elements.clear();
     unsigned int count = 0;
     for (size_t i = 0; i < vertData.size(); i += 3) {
         if (i + 1 > vertData.size() || i + 2 > vertData.size()) {
-            std::cout << "nuh-uh" << std::endl;
-            buffers->verts.clear();
+            m_buffers->m_verts.clear();
             return;
         }
-        buffers->verts.push_back(cy::Vec3(vertData[i], vertData[i + 1], vertData[i + 2]));
-        buffers->elements.push_back(count);
+        m_buffers->m_verts.push_back(cy::Vec3(vertData[i], vertData[i + 1], vertData[i + 2]));
+        m_buffers->m_elements.push_back(count);
         count++;
     }
 }
@@ -285,28 +280,27 @@ void Model::SetNorms(std::vector<float> normData)
 {
     for (size_t i = 0; i < normData.size(); i += 3) {
         if (i + 1 > normData.size() || i + 2 > normData.size()) {
-            std::cout << "nuh-uh" << std::endl;
-            buffers->norms.clear();
+            m_buffers->m_norms.clear();
             return;
         }
-        buffers->norms.push_back(cy::Vec3(normData[i], normData[i + 1], normData[i + 2]));
+        m_buffers->m_norms.push_back(cy::Vec3(normData[i], normData[i + 1], normData[i + 2]));
     }
 }
 void Model::SetTexts(std::vector<float> textData)
 {
     for (size_t i = 0; i < textData.size(); i += 2) {
-        buffers->texts.push_back(cy::Vec2(textData[i], textData[i + 1]));
+        m_buffers->m_texts.push_back(cy::Vec2(textData[i], textData[i + 1]));
     }
 }
 
 void Model::LoadEnvMap(const char* folder, const char** filenames)
 {
-    path parent = path(folder);
+    const path parent = path(folder);
 
-    envTex.Initialize();
+    m_envTex.Initialize();
     for (int i = 0; i < 6; i++) {
         //load image from file
-        path imgPath = parent / path(filenames[i]);
+        const path imgPath = parent / path(filenames[i]);
 
         std::vector<unsigned char> png;
         std::vector<unsigned char> image;
@@ -318,23 +312,23 @@ void Model::LoadEnvMap(const char* folder, const char** filenames)
         if (error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
 
         //set image
-        envTex.SetImageRGBA((cy::GLTextureCubeMap::Side)i, &image[0], width, height);
+        m_envTex.SetImageRGBA((cy::GLTextureCubeMap::Side)i, &image[0], width, height);
     }
 
-    envTex.BuildMipmaps();
-    envTex.SetSeamless();
+    m_envTex.BuildMipmaps();
+    m_envTex.SetSeamless();
 }
 
 void Model::SetTranslation(float x, float y, float z)
 {
-    xPos = x;
-    yPos = y;
-    zPos = z;
+    m_xPos = x;
+    m_yPos = y;
+    m_zPos = z;
 }
 
 void Model::UpdateRotation(float x, float y, float z)
 {
-    xRot += x;
-    yRot += y;
-    zRot += z;
+    m_xRot += x;
+    m_yRot += y;
+    m_zRot += z;
 }

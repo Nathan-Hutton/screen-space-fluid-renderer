@@ -2,7 +2,6 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include "Input.h"
-#include "ShaderHandler.h"
 #include "Camera.h"
 #include "Particles.h"
 #include "CacheHandler.h"
@@ -36,7 +35,6 @@ int main(int argc, char** argv)
     glCullFace(GL_BACK);
 
 
-    // compileShaders();
     cam = Camera(screenWidth, screenHeight);
     cam.SetPos(0.0f, 0.42f, -1.68f);
     sim.LoadModel();
