@@ -34,10 +34,6 @@ public:
 	Camera(int width, int height);
 
 	cy::Matrix4f GetView() { calcView(); return m_view; }
-	cy::Matrix4f GetView(cy::Vec3f from, cy::Vec3f at, cy::Vec3f up=cy::Vec3f(0, 1, 0))
-	{
-		return cy::Matrix4f().View(from, at, up);
-	}
 	cy::Matrix4f GetProj() { calcProj(); return m_projection; }
 	cy::Matrix4f GetReflView(float height);	// height is y coordinate of our assumed horizontal relfection plane
 	float GetFov() const { return m_fov; }

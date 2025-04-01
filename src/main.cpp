@@ -22,7 +22,7 @@ int main(int argc, char** argv)
     const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
     const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
     glutInitWindowSize(screenWidth, screenHeight);
-    glutCreateWindow("Volume rendering");
+    glutCreateWindow("Fluid rendering");
     glutFullScreen();
 
     const GLenum err{ glewInit() };
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
-    viewProjectionTransform = cam.GetView(ch.m_from, ch.m_at);
+    viewProjectionTransform = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
