@@ -219,7 +219,7 @@ void Model::SpcTexSetup() {
 
 void Model::createVertexArray()
 {
-    const int size = m_buffers->m_verts.size();
+    const size_t size = m_buffers->m_verts.size();
     // initialize the vao
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);

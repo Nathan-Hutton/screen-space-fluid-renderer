@@ -9,3 +9,7 @@ void processInput(unsigned char key, [[maybe_unused]] int x, [[maybe_unused]] in
         glutLeaveMainLoop();
 }
 
+void resizeWindow(int width, int height)
+{
+    glViewport(0, 0, width, height);
+}

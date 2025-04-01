@@ -11,7 +11,6 @@ Particles sim = Particles();
 CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
 
-void resizeWindow(int width, int height);
 void renderScene();
 void update();
 
@@ -57,9 +56,7 @@ int main(int argc, char** argv)
 
 void update()
 {
-    // Put something here
     ch.LoadNextFrame(&sim);
-
     glutPostRedisplay();
 }
 
@@ -67,14 +64,7 @@ void update()
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
     sim.Render(viewProjectionTransform);
-
     glutSwapBuffers();
-}
-
-void resizeWindow(int width, int height)
-{
-    glViewport(0, 0, width, height);
 }
 
