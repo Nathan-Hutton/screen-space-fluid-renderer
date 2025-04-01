@@ -9,6 +9,7 @@
 Camera cam;
 Particles sim = Particles();
 CacheHandler ch = CacheHandler();
+cy::Matrix4f viewProjectionTransform;
 
 void resizeWindow(int width, int height);
 void renderScene();
@@ -39,9 +40,9 @@ int main(int argc, char** argv)
     cam.SetPos(0.0f, 0.42f, -1.68f);
     sim.LoadModel();
 
-    // ch.LoadFile("../data/SphereEmitter/FluidFrame/frame.0120.pos", &sim);
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
+    viewProjectionTransform = cam.GetView(ch.m_from, ch.m_at);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -67,7 +68,7 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    sim.Render(&cam);
+    sim.Render(viewProjectionTransform);
 
     glutSwapBuffers();
 }

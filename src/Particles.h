@@ -25,32 +25,14 @@ public:
         m_positions = {};
     }
 
-    void Render(Camera* cam) const
+    void Render(const cy::Matrix4f& viewProjectionTransform) const
     {
-        const cy::Vec3f from = cy::Vec3f(-3.96f, 2.52f, 3.56f);
-        const cy::Vec3f at = cy::Vec3f(0.0f, 0.46f, -0.1f);
-
         cy::GLSLProgram* program = m_sphere->GetProgram();
         program->Bind();
 
-        if (m_positions.empty()) {
-            const cy::Matrix4f mvp = cam->GetProj() * cam->GetView();
-
-            program->RegisterUniform(0, "mvp");
-            program->SetUniformMatrix4(0, &mvp[0]);
-
-            m_sphere->Bind();
-
-            glDrawElements(GL_TRIANGLES, m_sphere->GetLength(), GL_UNSIGNED_INT, 0);
-            
-            m_sphere->Unbind();
-
-            return;
-        }
-
         for (size_t i = 0; i < m_count; i++) {
             const cy::Vec3f translation = cy::Vec3f(m_positions[i*3], m_positions[i*3+1], m_positions[i*3+2]);
-            const cy::Matrix4f mvp = cam->GetProj() * cam->GetView(from, at) * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(m_radius);
+            const cy::Matrix4f mvp = viewProjectionTransform * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(m_radius);
 
             program->RegisterUniform(0, "mvp");
             program->SetUniformMatrix4(0, &mvp[0]);
