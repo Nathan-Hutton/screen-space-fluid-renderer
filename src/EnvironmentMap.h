@@ -84,7 +84,6 @@ class EnvironmentMap
 
     void render(const cy::Matrix4f& viewProjectionInverse)
     {
-        glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glUseProgram(m_shader);
 
@@ -93,7 +92,6 @@ class EnvironmentMap
         glBindVertexArray(m_planeVAO);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glDepthMask(GL_TRUE);
-        glEnable(GL_DEPTH_TEST);
     }
 
     private:
