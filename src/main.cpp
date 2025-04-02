@@ -70,8 +70,8 @@ void update()
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    environmentMap.render(viewProjectionInverse);
     sim.Render(viewProjectionTransform);
-    //environmentMap.render(viewProjectionInverse);
     glutSwapBuffers();
 }
 
