@@ -12,6 +12,7 @@ Particles sim = Particles();
 CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
 cy::Matrix4f viewProjectionInverse;
+EnvironmentMap environmentMap;
 
 void renderScene();
 void update();
@@ -44,7 +45,9 @@ int main(int argc, char** argv)
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
     viewProjectionTransform = cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
-    viewProjectionInverse = (cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0))).GetInverse();
+    viewProjectionInverse = (cam.GetProj() * cy::Matrix4f(cy::Matrix3f(cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0))))).GetInverse();
+
+    environmentMap.init();
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -68,6 +71,7 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     sim.Render(viewProjectionTransform);
+    //environmentMap.render(viewProjectionInverse);
     glutSwapBuffers();
 }
 

@@ -7,7 +7,8 @@
 class EnvironmentMap
 {
     public:
-    EnvironmentMap()
+    EnvironmentMap() {}
+    void init()
     {
         // *******
         // Texture
@@ -73,7 +74,12 @@ class EnvironmentMap
         // ***********
         // Make shader
         // ***********
-        compileShader(m_shader, { "../shaders/environment.vert", "environment.frag" });
+        compileShader(m_shader, { "../shaders/environment.vert", "../shaders/environment.frag" });
+
+        glUseProgram(m_shader);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
+        glUniform1i(glGetUniformLocation(m_shader, "env"), 0);
     }
 
     void render(const cy::Matrix4f& viewProjectionInverse)
