@@ -97,7 +97,7 @@ void Model::LoadOBJFile(char const* filename) {
         m_mesh = NULL;
         return;
     }
-    fprintf(stdout, "OBJ loaded. # of verticies: '%d'\n", m_mesh->NV());
+    //fprintf(stdout, "OBJ loaded. # of verticies: '%d'\n", m_mesh->NV());
 
     m_objFilename = filename;
 

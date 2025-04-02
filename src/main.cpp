@@ -5,11 +5,13 @@
 #include "Camera.h"
 #include "Particles.h"
 #include "CacheHandler.h"
+#include "EnvironmentMap.h"
 
 Camera cam;
 Particles sim = Particles();
 CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
+cy::Matrix4f viewProjectionInverse;
 
 void renderScene();
 void update();
@@ -41,7 +43,8 @@ int main(int argc, char** argv)
 
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
-    viewProjectionTransform = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
+    viewProjectionTransform = cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
+    viewProjectionInverse = (cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0))).GetInverse();
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
