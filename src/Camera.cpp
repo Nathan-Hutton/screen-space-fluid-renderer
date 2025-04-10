@@ -22,8 +22,8 @@
 
 Camera::Camera(int width, int height) {
     m_fov = M_PI / 3;
-    m_nearClip = 0.001;
-    m_farClip = 1000.0;
+    m_nearClip = 0.1;
+    m_farClip = 5.0;
 
     m_camDist = 30;
     m_zRot = 0;

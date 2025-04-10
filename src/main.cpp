@@ -13,6 +13,10 @@ CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
 cy::Matrix4f viewProjectionInverse;
 EnvironmentMap environmentMap;
+Model plane;
+
+cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
+cy::GLSLProgram    depthProg;    // program to render the depth buffer
 
 void renderScene();
 void update();
@@ -20,7 +24,7 @@ void update();
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
     const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
     glutInitWindowSize(screenWidth, screenHeight);
@@ -33,13 +37,15 @@ int main(int argc, char** argv)
         return -1;
     }
     glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+	glDepthFunc(GL_LEQUAL);
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_BACK);
 
 
     cam = Camera(screenWidth, screenHeight);
     cam.SetPos(0.0f, 0.42f, -1.68f);
+
+    sim = Particles();
     sim.LoadModel();
 
     ch.LoadSim("SphereDropGround");
@@ -48,6 +54,41 @@ int main(int argc, char** argv)
     viewProjectionInverse = (cam.GetProj() * cy::Matrix4f(cy::Matrix3f(cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0))))).GetInverse();
 
     environmentMap.init();
+
+    depthBuf.Initialize(
+        false,
+        screenWidth,
+        screenHeight
+    );
+
+    depthProg.BuildFiles("../shaders/depth.vert", "../shaders/depth.frag");
+
+    // plane = Model();
+    std::vector<float> planeVerts = {
+        -1.0f, -1.0f, 0.999f, // Bottom left
+        1.0f, -1.0f, 0.999f,  // Bottom right
+        -1.0f, 1.0f, 0.999f,  // Top left
+        1.0f, 1.0f, 0.999f,   // Top right
+    };
+    plane.SetVerts(planeVerts);
+    std::vector<float> planeNorms = {
+        0.0f,   0.0f,   1.0f,
+        0.0f,   0.0f,   1.0f,
+        0.0f,   0.0f,   1.0f,
+        0.0f,   0.0f,   1.0f,
+    };
+    plane.SetNorms(planeNorms);
+    std::vector<float> planeTexts = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f
+    };
+    plane.SetTexts(planeTexts);
+    plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
+    plane.Initialize();
+
+    printf("setup complete! (ish)\n");
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -70,8 +111,31 @@ void update()
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    environmentMap.render(viewProjectionInverse);
-    sim.Render(viewProjectionTransform);
+
+    // environmentMap.render(viewProjectionInverse);
+
+    // render the depth buffer
+    depthBuf.Bind();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
+    depthProg.Bind();
+    sim.Render(viewProjectionTransform, depthProg);
+    depthBuf.Unbind();
+
+    // render the plane
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    cy::GLSLProgram* program = plane.GetProgram();
+    program->Bind();
+    program->SetUniform("depthTex", 0);
+    depthBuf.BindTexture(0);
+
+    plane.Bind();
+
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+
+    plane.Unbind();
+
+    // sim.Render(viewProjectionTransform);
     glutSwapBuffers();
 }
 
