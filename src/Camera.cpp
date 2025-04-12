@@ -1,4 +1,6 @@
 #include "Camera.h"
+#include <stdio.h>
+#include <cmath>
 
 //Camera::Camera() {
 //    fov = M_PI / 3;
@@ -38,6 +40,13 @@ Camera::Camera(int width, int height) {
 
     calcView();
     calcProj();
+
+    m_nearW = 2 * m_nearClip * tan(m_fov/2) / width;
+    m_farW = 2 * m_farClip * tan(m_fov/2) / width;
+    m_nearH = height * m_nearW / width;
+    m_farH = height * m_farW / width;
+
+    // printf("%f, %f, %f, %f\n", m_nearW, m_farW, m_nearH, m_farH);
 }
 
 void Camera::calcView() {

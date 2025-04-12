@@ -41,6 +41,7 @@ int main(int argc, char** argv)
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
 
+    printf("screen res: %d / %d\n", screenWidth, screenHeight);
 
     cam = Camera(screenWidth, screenHeight);
     cam.SetPos(0.0f, 0.42f, -1.68f);
@@ -124,9 +125,20 @@ void renderScene()
 
     // render the plane
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    float scale = 2 * tan(cam.GetFov() / 2);
+    int imWidth = cam.GetImgWidth();
+    int imHeight = cam.GetImgHeight();
+
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
     program->SetUniform("depthTex", 0);
+    // program->SetUniform("wNear", cam.GetNearW());
+    // program->SetUniform("wFar", cam.GetFarW());
+    // program->SetUniform("hNear", cam.GetNearH());
+    // program->SetUniform("hFar", cam.GetFarH());
+    program->SetUniform("imgW", imWidth);
+    program->SetUniform("imgH", imHeight);
+    program->SetUniform("scale", scale);
     depthBuf.BindTexture(0);
 
     plane.Bind();
