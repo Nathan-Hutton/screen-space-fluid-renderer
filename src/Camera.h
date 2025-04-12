@@ -54,10 +54,6 @@ public:
 	void UpdateZRot(float delta) { m_zRot += delta; }
 	void UpdateDist(float delta) { m_camDist += delta; }
 
-	float GetNearW() { return m_nearW; }
-	float GetFarW() { return m_farW; }
-	float GetNearH() { return m_nearH; }
-	float GetFarH() { return m_farH; }
 	float GetImgWidth() { return m_imWidth; }
 	float GetImgHeight() { return m_imHeight; }
 };

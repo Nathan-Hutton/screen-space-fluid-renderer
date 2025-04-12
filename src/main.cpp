@@ -113,7 +113,7 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // environmentMap.render(viewProjectionInverse);
+    environmentMap.render(viewProjectionInverse);
 
     // render the depth buffer
     depthBuf.Bind();
@@ -123,31 +123,17 @@ void renderScene()
     sim.Render(viewProjectionTransform, depthProg);
     depthBuf.Unbind();
 
-    // render the plane
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    // create a smoothed depth buffer
+    // let try using a plane?
+
+    // render the final texture
     float scale = 2 * tan(cam.GetFov() / 2);
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
 
-    cy::GLSLProgram* program = plane.GetProgram();
-    program->Bind();
-    program->SetUniform("depthTex", 0);
-    // program->SetUniform("wNear", cam.GetNearW());
-    // program->SetUniform("wFar", cam.GetFarW());
-    // program->SetUniform("hNear", cam.GetNearH());
-    // program->SetUniform("hFar", cam.GetFarH());
-    program->SetUniform("imgW", imWidth);
-    program->SetUniform("imgH", imHeight);
-    program->SetUniform("scale", scale);
     depthBuf.BindTexture(0);
 
-    plane.Bind();
-
-    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-
-    plane.Unbind();
-
-    // sim.Render(viewProjectionTransform);
+    sim.Render(viewProjectionTransform, imWidth, imHeight, scale);
     glutSwapBuffers();
 }
 

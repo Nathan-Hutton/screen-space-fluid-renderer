@@ -5,10 +5,6 @@ layout(location = 0) out vec4 color;
 in vec2 texCoords;
 
 uniform sampler2D depthTex;
-// uniform float wNear;
-// uniform float wFar;
-// uniform float hNear;
-// uniform float hFar;
 uniform int imgW;
 uniform int imgH;
 uniform float scale;
@@ -24,13 +20,7 @@ float LinearizeDepth(vec2 uv)
 
 void main()
 {
-	// float depth = LinearizeDepth(texCoords);
-
     float depth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
-    // float depth = texture(depthTex, texCoords).r;
-    // float depth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).x;
-    // color = vec4(depth, depth, depth, 1);
-    // color = vec4(texCoords.x, texCoords.y, 0, 1.0);
 
     float dx = depth * scale;
     float dy = dx * imgH / imgW;
@@ -40,16 +30,8 @@ void main()
 
     float dzx = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(1, 0), 0).r - depth;
     float dzy = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(0, 1), 0).r - depth;
-    // if (dzy == 0) { color = vec4(1, 1, 1, 1); return; }
 
-    // vec3 normal = normalize(cross(vec3(1, 0, dzx), vec3(0, 1, dzy)));
     vec3 normal = normalize(cross(vec3(dx, 0, -dzx), vec3(0, dy, -dzy)));
-    // vec3 normal = normalize(vec3(dzx, dzy, 1));
 
-    // if (dx <= 0) { color = vec4(1, 1, 1, 1); return; }
-    // dx = dx * 1000;
-    // color = vec4(dx, dx, dx, 1);
-    color = vec4(normal.x, normal.y, normal.z, 1);
-    // color = vec4(depth, depth, depth, 1);
-
+    color = vec4(normal, 1);
 }
