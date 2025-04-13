@@ -21,7 +21,7 @@ Model plane;
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
 
-cy::GLRenderTexture2D smoothBuf;    // buffer for smoothed depth map
+cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
 
@@ -80,7 +80,6 @@ int main(int argc, char** argv)
     // smooth buffer initialization
     smoothBuf.Initialize(
         false,
-        3,
         screenWidth,
         screenHeight
     );
@@ -133,7 +132,7 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    environmentMap.render(viewProjectionInverse);
+    // environmentMap.render(viewProjectionInverse);
 
     // render the depth buffer
     depthBuf.Bind();
@@ -144,24 +143,24 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
-    // smoothBuf.Bind();
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // float myPi = M_PI;
-    // float myE = M_E;
+    smoothBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    float myPi = M_PI;
+    float myE = M_E;
 
-    // smoothProg.Bind();
-    // smoothProg.SetUniform("depthTex", 0);
-    // smoothProg.SetUniform("e", myPi);
-    // smoothProg.SetUniform("pi", myE);
-    // depthBuf.BindTexture(0);
+    smoothProg.Bind();
+    smoothProg.SetUniform("depthTex", 0);
+    smoothProg.SetUniform("e", myPi);
+    smoothProg.SetUniform("pi", myE);
+    depthBuf.BindTexture(0);
 
-    // plane.Bind();
-    // glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    // plane.Unbind();
-    // smoothBuf.Unbind();
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    smoothBuf.Unbind();
 
     // render the final texture
-    float scale = 2 * tan(cam.GetFov() / 2);
+    float scale = 2.0f * tan(cam.GetFov() / 2.0f);
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
 
@@ -172,7 +171,7 @@ void renderScene()
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     program->SetUniform("scale", scale);
-    depthBuf.BindTexture(1);
+    smoothBuf.BindTexture(1);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
