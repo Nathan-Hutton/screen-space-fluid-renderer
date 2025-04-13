@@ -6,6 +6,7 @@
 #include "Particles.h"
 #include "CacheHandler.h"
 #include "EnvironmentMap.h"
+// #include "Plane.h"
 
 Camera cam;
 Particles sim = Particles();
@@ -38,38 +39,44 @@ int main(int argc, char** argv)
     }
     glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
 
-    printf("screen res: %d / %d\n", screenWidth, screenHeight);
-
+    // camera initialization
     cam = Camera(screenWidth, screenHeight);
     cam.SetPos(0.0f, 0.42f, -1.68f);
 
+    // particle sim initialization
     sim = Particles();
     sim.LoadModel();
 
+    // cache handler initializaiton
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
+
+    // render parameters initializaiton
     viewProjectionTransform = cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
     viewProjectionInverse = (cam.GetProj() * cy::Matrix4f(cy::Matrix3f(cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0))))).GetInverse();
 
+    // invironment map initializaiton
     environmentMap.init();
 
+    // depth buffer initialization
     depthBuf.Initialize(
         false,
         screenWidth,
         screenHeight
     );
-
     depthProg.BuildFiles("../shaders/depth.vert", "../shaders/depth.frag");
 
-    // plane = Model();
+    // rendering plane initialization
     std::vector<float> planeVerts = {
-        -1.0f, -1.0f, 0.999f, // Bottom left
-        1.0f, -1.0f, 0.999f,  // Bottom right
-        -1.0f, 1.0f, 0.999f,  // Top left
-        1.0f, 1.0f, 0.999f,   // Top right
+        -1.0f, -1.0f, 0.0f, // Bottom left
+        1.0f, -1.0f, 0.0f,  // Bottom right
+        -1.0f, 1.0f, 0.0f,  // Top left
+        1.0f, 1.0f, 0.0f,   // Top right
     };
     plane.SetVerts(planeVerts);
     std::vector<float> planeNorms = {
@@ -88,8 +95,6 @@ int main(int argc, char** argv)
     plane.SetTexts(planeTexts);
     plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
     plane.Initialize();
-
-    printf("setup complete! (ish)\n");
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -125,15 +130,25 @@ void renderScene()
 
     // create a smoothed depth buffer
     // let try using a plane?
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     // render the final texture
     float scale = 2 * tan(cam.GetFov() / 2);
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
 
+    cy::GLSLProgram* program = plane.GetProgram();
+    program->Bind();
+
+    program->SetUniform("depthTex", 0);
+    program->SetUniform("imgW", imWidth);
+    program->SetUniform("imgH", imHeight);
+    program->SetUniform("scale", scale);
     depthBuf.BindTexture(0);
 
-    sim.Render(viewProjectionTransform, imWidth, imHeight, scale);
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+
     glutSwapBuffers();
 }
-

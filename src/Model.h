@@ -89,4 +89,3 @@ public:
 
 	void SetYUp() { m_xRot = -M_PI / 2; }
 };
-

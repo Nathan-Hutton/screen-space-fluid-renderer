@@ -31,7 +31,13 @@ void main()
     float dzx = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(1, 0), 0).r - depth;
     float dzy = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(0, 1), 0).r - depth;
 
+    if (dzx == 0 || dzy == 0) {
+        color = vec4(1, 0, 0, 0);
+        return;
+    }
+
     vec3 normal = normalize(cross(vec3(dx, 0, -dzx), vec3(0, dy, -dzy)));
 
     color = vec4(normal, 1);
+    // color = vec4(1, 1, 1, 1);
 }
