@@ -8,6 +8,8 @@
 #include "EnvironmentMap.h"
 // #include "Plane.h"
 
+#define _USE_MATH_DEFINES
+
 Camera cam;
 Particles sim = Particles();
 CacheHandler ch = CacheHandler();
@@ -18,6 +20,10 @@ Model plane;
 
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
+
+cy::GLRenderTexture2D smoothBuf;    // buffer for smoothed depth map
+cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
+
 
 void renderScene();
 void update();
@@ -71,6 +77,15 @@ int main(int argc, char** argv)
     );
     depthProg.BuildFiles("../shaders/depth.vert", "../shaders/depth.frag");
 
+    // smooth buffer initialization
+    smoothBuf.Initialize(
+        false,
+        3,
+        screenWidth,
+        screenHeight
+    );
+    smoothProg.BuildFiles("../shaders/plane.vert", "../shaders/smooth.frag");
+
     // rendering plane initialization
     std::vector<float> planeVerts = {
         -1.0f, -1.0f, 0.0f, // Bottom left
@@ -109,8 +124,8 @@ int main(int argc, char** argv)
 
 void update()
 {
-    ch.LoadNextFrame(&sim);
-    glutPostRedisplay();
+    // ch.LoadNextFrame(&sim);
+    // glutPostRedisplay();
 }
 
 
@@ -129,8 +144,21 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
-    // let try using a plane?
-    glClear(GL_DEPTH_BUFFER_BIT);
+    // smoothBuf.Bind();
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // float myPi = M_PI;
+    // float myE = M_E;
+
+    // smoothProg.Bind();
+    // smoothProg.SetUniform("depthTex", 0);
+    // smoothProg.SetUniform("e", myPi);
+    // smoothProg.SetUniform("pi", myE);
+    // depthBuf.BindTexture(0);
+
+    // plane.Bind();
+    // glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    // plane.Unbind();
+    // smoothBuf.Unbind();
 
     // render the final texture
     float scale = 2 * tan(cam.GetFov() / 2);
@@ -140,11 +168,11 @@ void renderScene()
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
 
-    program->SetUniform("depthTex", 0);
+    program->SetUniform("depthTex", 1);
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     program->SetUniform("scale", scale);
-    depthBuf.BindTexture(0);
+    depthBuf.BindTexture(1);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
