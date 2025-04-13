@@ -11,11 +11,10 @@
 class Particles
 {
 private:
-    unsigned int        m_count;      // the number of particles
-    float               m_radius;     // the radius of the the particles
-    std::vector<float>  m_positions;  // the positions of all the particles
-    Model*              m_sphere;     // sphere representing points
-
+    unsigned int        m_count;        // the number of particles
+    float               m_radius;       // the radius of the the particles
+    std::vector<float>  m_positions;    // the positions of all the particles
+    Model*              m_sphere;       // sphere representing points
 
 public:
     Particles()
@@ -23,12 +22,34 @@ public:
         m_count = 0;
         m_radius = 1.0f;
         m_positions = {};
+        m_sphere = nullptr;
     }
 
-    void Render(const cy::Matrix4f& viewProjectionTransform) const
-    {
+    void Render(const cy::Matrix4f& viewProjectionTransform, cy::GLSLProgram &program) {
+        program.Bind();
+        // m_depthBuf.BindTexture(0);
+
+        for (size_t i = 0; i < m_count; i++) {
+            const cy::Vec3f translation = cy::Vec3f(m_positions[i*3], m_positions[i*3+1], m_positions[i*3+2]);
+            const cy::Matrix4f mvp = viewProjectionTransform * cy::Matrix4f().Translation(translation) * cy::Matrix4f().Scale(m_radius);
+
+            program.RegisterUniform(0, "mvp");
+            program.SetUniformMatrix4(0, &mvp[0]);
+            // program->SetUniform("depthTex", 0);
+
+            m_sphere->Bind();
+
+            glDrawElements(GL_TRIANGLES, m_sphere->GetLength(), GL_UNSIGNED_INT, 0);
+            
+            m_sphere->Unbind();
+        }
+    }
+
+    void Render(const cy::Matrix4f& viewProjectionTransform, int imWidth, int imHeight, float scale) const
+    {        
         cy::GLSLProgram* program = m_sphere->GetProgram();
         program->Bind();
+        // m_depthBuf.BindTexture(0);
 
         for (size_t i = 0; i < m_count; i++) {
             const cy::Vec3f translation = cy::Vec3f(m_positions[i*3], m_positions[i*3+1], m_positions[i*3+2]);
@@ -36,6 +57,10 @@ public:
 
             program->RegisterUniform(0, "mvp");
             program->SetUniformMatrix4(0, &mvp[0]);
+            program->SetUniform("depthTex", 0);
+            program->SetUniform("imgW", imWidth);
+            program->SetUniform("imgH", imHeight);
+            program->SetUniform("scale", scale);
 
             m_sphere->Bind();
 

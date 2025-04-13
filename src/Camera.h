@@ -26,6 +26,12 @@ private:
 	int m_imWidth, m_imHeight;
 	bool m_ortho;
 
+	// parameters needed for calculating the normal map in the fragment shader
+	float m_nearW;
+	float m_farW;
+	float m_nearH;
+	float m_farH;
+
 	void calcView();
 	void calcProj();
 
@@ -47,5 +53,8 @@ public:
 	void UpdateYRot(float delta) { m_yRot += delta; }
 	void UpdateZRot(float delta) { m_zRot += delta; }
 	void UpdateDist(float delta) { m_camDist += delta; }
+
+	float GetImgWidth() { return m_imWidth; }
+	float GetImgHeight() { return m_imHeight; }
 };
 

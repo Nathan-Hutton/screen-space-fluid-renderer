@@ -1,29 +1,12 @@
 #include "Camera.h"
+#include <stdio.h>
+#include <cmath>
 
-//Camera::Camera() {
-//    fov = M_PI / 3;
-//    nearClip = 0.5;
-//    farClip = 1000.0;
-//
-//    camDist = 30;
-//    zRot = 0;
-//    //xRot = -M_PI/2;
-//    yRot = 0;
-//    xRot = 0;
-//
-//    imWidth = -1;
-//    imHeight = -1;
-//
-//    ortho = false;
-//
-//    calcView();
-//    calcProj();
-//}
 
 Camera::Camera(int width, int height) {
     m_fov = M_PI / 3;
-    m_nearClip = 0.001;
-    m_farClip = 1000.0;
+    m_nearClip = 0.1;
+    m_farClip = 5.0;
 
     m_camDist = 30;
     m_zRot = 0;
