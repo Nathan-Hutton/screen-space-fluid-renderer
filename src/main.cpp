@@ -123,8 +123,8 @@ int main(int argc, char** argv)
 
 void update()
 {
-    // ch.LoadNextFrame(&sim);
-    // glutPostRedisplay();
+    ch.LoadNextFrame(&sim);
+    glutPostRedisplay();
 }
 
 
@@ -132,7 +132,7 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // environmentMap.render(viewProjectionInverse);
+    environmentMap.render(viewProjectionInverse);
 
     // render the depth buffer
     depthBuf.Bind();
