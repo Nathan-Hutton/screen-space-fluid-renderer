@@ -28,6 +28,7 @@ void main()
     // let's try a basic gaussian filter
     float sigma = 10.0;
     float two_sigma2 = 2.0 * sigma * sigma;
+    
     float total = depth;
     float wgtNorm = 1.0;
 
