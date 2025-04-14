@@ -163,6 +163,7 @@ void renderScene()
     float scale = 2.0f * tan(cam.GetFov() / 2.0f);
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
+    cy::Vec4f lightView = viewProjectionTransform * cy::Vec4f(-3.0, 8.0, 7.0, 1.0);
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
@@ -171,6 +172,8 @@ void renderScene()
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     program->SetUniform("scale", scale);
+    program->RegisterUniform(0, "lightView");
+    program->SetUniform4("lightView", &lightView[0]);
     smoothBuf.BindTexture(1);
 
     plane.Bind();
