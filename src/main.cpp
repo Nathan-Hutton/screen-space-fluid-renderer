@@ -163,17 +163,24 @@ void renderScene()
     float scale = 2.0f * tan(cam.GetFov() / 2.0f);
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
-    cy::Vec4f lightView = viewProjectionTransform * cy::Vec4f(-3.0, 8.0, 7.0, 1.0);
+    // cy::Vec4f lightView = viewProjectionTransform * cy::Vec4f(-3.0, 8.0, 7.0, 1.0);
+    cy::Matrix4f invProj = cam.GetProj().GetInverse();
+    cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
 
+    program->RegisterUniform(0, "invProjectionMatrix");
+    program->SetUniformMatrix4(0, &invProj[0]);
+    program->RegisterUniform(1, "invViewMatrix");
+    program->SetUniformMatrix4(1, &invView[0]);
     program->SetUniform("depthTex", 1);
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
-    program->SetUniform("scale", scale);
-    program->RegisterUniform(0, "lightView");
-    program->SetUniform4("lightView", &lightView[0]);
+    // program->SetUniform("scale", scale);
+    // program->RegisterUniform(0, "lightView");
+    // program->SetUniform4("lightView", &lightView[0]);
+    
     smoothBuf.BindTexture(1);
 
     plane.Bind();

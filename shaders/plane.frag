@@ -6,21 +6,50 @@ in vec2 texCoords;
 // in vec3 lightPos;
 
 uniform sampler2D depthTex;
+// uniform samplerCube env;
+// uniform mat4 projectionMatrix;
+uniform mat4 invProjectionMatrix;
+uniform mat4 invViewMatrix;
 uniform int imgW;
 uniform int imgH;
-uniform float scale;
-uniform vec4 lightView;
+// uniform float scale;
+// uniform vec4 lightView;
 
 vec3 camPos = vec3(imgW/2.0, imgH/2.0, -1.0);
 // vec4 lightPosWorld = view * vec4(-3.0, 8.0, 7.0, 1.0);
+float zNear = 0.1;    // TODO: Replace by the zNear of your perspective projection
+float zFar  = 5.0; // TODO: Replace by the zFar  of your perspective projection
 
 float LinearizeDepth(vec2 uv)
 {
-    float zNear = 0.1;    // TODO: Replace by the zNear of your perspective projection
-    float zFar  = 5.0; // TODO: Replace by the zFar  of your perspective projection
     float depth = texelFetch(depthTex, ivec2(uv), 0).x;
     // float depth = texture2D(depthTex, uv).x;
     return (2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear));
+}
+
+vec3 uvToEye(vec2 texCoord, float depth)
+{
+    float x  = texCoord.x * 2.0 - 1.0;
+    float y  = texCoord.y * 2.0 - 1.0;
+    float zn = ((zFar + zNear) / (zFar - zNear) * depth + 2 * zFar * zNear / (zFar - zNear)) / depth;
+
+    vec4 clipPos = vec4(x, y, zn, 1.0f);
+    vec4 viewPos = invProjectionMatrix * clipPos;
+    return viewPos.xyz / viewPos.w;
+}
+
+vec4 uvToWorld(vec2 texCoord, float eyeDepth)
+{
+    float x  = texCoord.x * 2.0 - 1.0;
+    float y  = texCoord.y * 2.0 - 1.0;
+    float zn = ((zFar + zNear) / (zFar - zNear) * eyeDepth + 2 * zFar * zNear / (zFar - zNear)) / eyeDepth;
+
+    vec4 clipPos = vec4(x, y, zn, 1.0f);
+    vec4 viewPos = invProjectionMatrix * clipPos;
+    vec4 eyePos  = viewPos.xyzw / viewPos.w;
+
+    vec4 worldPos = invViewMatrix * eyePos;
+    return worldPos;
 }
 
 vec3 calcDiffuse(vec3 difColor, vec3 normal, vec3 lightDir)
@@ -41,7 +70,24 @@ vec3 calcSpecular(vec3 specColor, vec3 normal, vec3 lightDir, vec3 viewDir, floa
 
 void main()
 {
-    float depth = LinearizeDepth(gl_FragCoord.xy);
+    float pixelWidth  = 1 / float(imgW);
+    float pixelHeight = 1 / float(imgW);
+    
+    float eyeDepth = texture(depthTex, texCoords).x;
+    float xDepth = texture(depthTex, texCoords + vec2(pixelWidth, 0)).x;
+    float yDepth = texture(depthTex, texCoords + vec2(0, pixelHeight)).x;
+
+    vec4 worldPos = uvToWorld(texCoords, eyeDepth);
+    vec4 dxWorld = uvToWorld(texCoords + vec2(pixelWidth, 0), xDepth);
+    vec4 dyWorld = uvToWorld(texCoords + vec2(0, pixelHeight), yDepth);
+
+    vec3 dzx = normalize(vec3(dxWorld - worldPos));
+    vec3 dzy = normalize(vec3(dxWorld - worldPos));
+
+    vec3 normal = normalize(cross(dzx, dzy));
+
+    // --------------------------------------------- //
+    /*float depth = LinearizeDepth(gl_FragCoord.xy);
 
     float w_float = float(imgW);
     float h_float = float(imgH);
@@ -60,34 +106,37 @@ void main()
         return;
     }
 
-    vec3 normal = normalize(cross(vec3(dx, 0.0, -dzx), vec3(0.0, dy, -dzy)));
+    vec3 normal = normalize(cross(vec3(dx, 0.0, -dzx), vec3(0.0, dy, -dzy)));*/
+    // --------------------------------------------- //
 
     // now we need to actually do some shading with this normal value
-    // get light position in screen space
-    vec4 lightNorm = lightView / abs(lightView.w);
-    vec3 lightPos = vec3((lightNorm.x + 1) / 2 * imgW, (lightNorm.y + 1) / 2 * imgH, lightView.z);
+    // // get light position in screen space
+    // vec4 lightNorm = lightView / abs(lightView.w);
+    // vec3 lightPos = vec3((lightNorm.x + 1) / 2 * imgW, (lightNorm.y + 1) / 2 * imgH, lightView.z);
 
-    // fragment position with depth included
-    vec3 fragPos = vec3(gl_FragCoord.xy, depth);
+    // // fragment position with depth included
+    // vec3 fragPos = vec3(gl_FragCoord.xy, depth);
 
-    // light and view directions for this fragment
-    vec3 lightDir = normalize(lightPos - fragPos);
-    vec3 viewDir = normalize(camPos - fragPos);
+    // // light and view directions for this fragment
+    // vec3 lightDir = normalize(lightPos - fragPos);
+    // vec3 viewDir = normalize(camPos - fragPos);
 
-    //------ when it comes to the above light and view calculations, i suspect i did something wrong -----//
+    // //------ when it comes to the above light and view calculations, i suspect i did something wrong -----//
 
-    // material parameters
-    vec3 difColor = vec3(0.0, 1.0, 1.0);
-    vec3 specColor = vec3(1.0, 1.0, 1.0);
-    float shine = 10.0;
+    // // material parameters
+    // // vec3 difColor = vec3(0.0, 1.0, 1.0);?
+    // vec3 reflDir = reflect( viewDir, normal );
+    // vec3 difColor 
+    // vec3 specColor = vec3(1.0, 1.0, 1.0);
+    // float shine = 10.0;
 
-    vec3 diffuse = 0.5 * calcDiffuse(difColor, normal, lightDir);
-    vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
-    vec3 amb = 0.2 * difColor;
+    // vec3 diffuse = 0.5 * calcDiffuse(difColor, normal, lightDir);
+    // vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
+    // vec3 amb = 0.2 * difColor;
 
-    vec3 total = clamp(diffuse + spec + amb, 0, 1);
-    float alpha = clamp(spec.x * 2, 0.5, 1); // this is to make specular areas more opaque
+    // vec3 total = clamp(diffuse + spec + amb, 0, 1);
+    // float alpha = clamp(spec.x * 2, 0.5, 1); // this is to make specular areas more opaque
 
-    color = vec4(total, alpha);
-    // color = vec4(normal, 1.0);
+    // color = vec4(total, alpha);
+    color = vec4(normal, 1.0);
 }
