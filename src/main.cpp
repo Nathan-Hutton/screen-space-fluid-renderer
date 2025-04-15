@@ -6,7 +6,8 @@
 #include "Particles.h"
 #include "CacheHandler.h"
 #include "EnvironmentMap.h"
-// #include "Plane.h"
+
+#define _USE_MATH_DEFINES
 
 Camera cam;
 Particles sim = Particles();
@@ -14,11 +15,19 @@ CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
 cy::Matrix4f viewProjectionInverse;
 EnvironmentMap environmentMap;
+EnvironmentMap bgMap;   // will contain environment with the floor plane
+GLuint bgMapID;
 Model plane;
+Model floorPlane;
 
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
 
+cy::GLRenderDepth2D smoothBufs[2];
+cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
+cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
+
+GLuint renderCubeMap();
 void renderScene();
 void update();
 
@@ -41,8 +50,6 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);
 
     // camera initialization
     cam = Camera(screenWidth, screenHeight);
@@ -71,6 +78,22 @@ int main(int argc, char** argv)
     );
     depthProg.BuildFiles("../shaders/depth.vert", "../shaders/depth.frag");
 
+    // smooth buffer initialization
+    smoothBuf.Initialize(
+        false,
+        screenWidth,
+        screenHeight
+    );
+    for (size_t i{ 0 }; i < 2; ++i)
+    {
+        smoothBufs[i].Initialize(
+            false,
+            screenWidth,
+            screenHeight
+        );
+    }
+    smoothProg.BuildFiles("../shaders/plane.vert", "../shaders/smooth.frag");
+
     // rendering plane initialization
     std::vector<float> planeVerts = {
         -1.0f, -1.0f, 0.0f, // Bottom left
@@ -96,6 +119,14 @@ int main(int argc, char** argv)
     plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
     plane.Initialize();
 
+    floorPlane.LoadOBJFile("../data/Floor/Floor.obj");
+    floorPlane.DifTexSetup();
+    floorPlane.CompileShaders("../shaders/floorPlane.vert", "../shaders/floorPlane.frag");
+    floorPlane.Initialize();
+
+    bgMapID = renderCubeMap();
+    bgMap.initFromExisting(bgMapID);
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
@@ -113,12 +144,92 @@ void update()
     glutPostRedisplay();
 }
 
+GLuint renderCubeMap()
+{
+    unsigned int resolution = environmentMap.GetWidth();
+
+    unsigned int CM_FBO;
+    unsigned int textureID;
+    glGenFramebuffers(1, &CM_FBO);
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    for (unsigned int i = 0; i < 6; i++)
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, resolution, resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, CM_FBO);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureID, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    cy::Vec3f position = cy::Vec3f(0.0, 0.5, 0.0);
+    cy::Matrix4f project = cy::Matrix4f().Perspective(M_PI/2.0f, 1.0, 0.1, 1000);
+    std::vector<cy::Matrix4f> views;
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(1.0f, 0.0f, 0.0f), cy::Vec3f(0.0f, -1.0f, 0.0f)));
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(-1.0f, 0.0f, 0.0f), cy::Vec3f(0.0f, -1.0f, 0.0f)));
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(0.0f, 1.0f, 0.0f), cy::Vec3f(0.0f, 0.0f, 1.0f)));
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(0.0f, -1.0f, 0.0f), cy::Vec3f(0.0f, 0.0f, -1.0f)));
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(0.0f, 0.0f, 1.0f), cy::Vec3f(0.0f, -1.0f, 0.0f)));
+    views.push_back(cy::Matrix4f().View(position, position + cy::Vec3f(0.0f, 0.0f, -1.0f), cy::Vec3f(0.0f, -1.0f, 0.0f)));
+
+    // Render scene to cubemap
+    // --------------------------------
+    glViewport(0, 0, (int)resolution, (int)resolution);
+    glBindFramebuffer(GL_FRAMEBUFFER, CM_FBO);
+
+    for (size_t i = 0; i < 6; i++)
+    {
+        cy::Matrix4f view = views[i];
+        cy::Matrix4f vp = project * view;
+        cy::Matrix4f vpInv = vp.GetInverse();
+
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, textureID, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // render environment and plane
+        environmentMap.render(vpInv);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        cy::GLSLProgram* floorProg = floorPlane.GetProgram();
+        floorProg->Bind();
+        floorProg->SetUniformMatrix4("mvp", &vp[0]);
+        floorProg->SetUniform("difTex", 0);
+        floorPlane.GetDif().Bind(0);
+
+        floorPlane.Bind();
+        glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+        floorPlane.Unbind();
+    }
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return textureID;
+}
 
 void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    environmentMap.render(viewProjectionInverse);
+    // render the floor plane here??
+    cy::GLSLProgram* floorProg = floorPlane.GetProgram();
+    floorProg->Bind();
+    floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
+    floorProg->SetUniform("difTex", 0);
+    floorPlane.GetDif().Bind(0);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
 
     // render the depth buffer
     depthBuf.Bind();
@@ -129,26 +240,62 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
-    // let try using a plane?
-    glClear(GL_DEPTH_BUFFER_BIT);
+    bool horizontal{ true };
+    smoothBufs[0].Bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // render the final texture
-    float scale = 2 * tan(cam.GetFov() / 2);
-    int imWidth = cam.GetImgWidth();
-    int imHeight = cam.GetImgHeight();
-
-    cy::GLSLProgram* program = plane.GetProgram();
-    program->Bind();
-
-    program->SetUniform("depthTex", 0);
-    program->SetUniform("imgW", imWidth);
-    program->SetUniform("imgH", imHeight);
-    program->SetUniform("scale", scale);
+    smoothProg.Bind();
+    smoothProg.SetUniform("depthTex", 0);
+    smoothProg.SetUniform("horizontal", !horizontal);
+    smoothProg.SetUniform("near", cam.getNearClip());
+    smoothProg.SetUniform("far", cam.getFarClip());
+    smoothProg.SetUniform("verticalResolution", glutGet(GLUT_WINDOW_HEIGHT));
+    smoothProg.SetUniform("verticalFOV", cam.GetFov());
     depthBuf.BindTexture(0);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    smoothBufs[0].Unbind();
+
+    const int amount{ 5 };
+    for (size_t i{ 0 }; i < amount; ++i)
+    {
+        smoothBufs[!horizontal].BindTexture(horizontal);
+        smoothBufs[horizontal].Bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        smoothProg.SetUniform("depthTex", horizontal);
+        smoothProg.SetUniform("horizontal", horizontal);
+
+        glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+        smoothBufs[horizontal].Unbind();
+        horizontal = !horizontal;
+    }
+
+    // render the final texture
+    cy::Matrix4f invProj = cam.GetProj().GetInverse();
+    cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
+
+    cy::GLSLProgram* program = plane.GetProgram();
+    program->Bind();
+
+    program->SetUniformMatrix4("invProjectionMatrix", &invProj[0]);
+    program->SetUniformMatrix4("invViewMatrix", &invView[0]);
+    program->SetUniform("depthTex", 0);
+    program->SetUniform("env", 1);
+    program->SetUniform("imgW", imWidth);
+    program->SetUniform("imgH", imHeight);
+    
+    glActiveTexture(GL_TEXTURE0+1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, bgMap.GetTextureID());
+    smoothBufs[!horizontal].BindTexture(0);
+
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
+
+    environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
 }
