@@ -154,13 +154,9 @@ void renderScene()
     // create a smoothed depth buffer
     smoothBuf.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    float myPi = M_PI;
-    float myE = M_E;
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
-    smoothProg.SetUniform("e", myPi);
-    smoothProg.SetUniform("pi", myE);
     depthBuf.BindTexture(0);
 
     plane.Bind();
