@@ -21,6 +21,7 @@ Model plane;
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
 
+cy::GLRenderDepth2D smoothBufs[2];
 cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
@@ -160,9 +161,9 @@ void renderScene()
     smoothBuf.Unbind();
 
     // render the final texture
-    float scale = 2.0f * tan(cam.GetFov() / 2.0f);
-    int imWidth = cam.GetImgWidth();
-    int imHeight = cam.GetImgHeight();
+    const float scale = 2.0f * tan(cam.GetFov() / 2.0f);
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
