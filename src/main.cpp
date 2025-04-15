@@ -24,6 +24,7 @@ Model floorPlane;
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
 
+cy::GLRenderDepth2D smoothBufs[2];
 cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
@@ -88,6 +89,14 @@ int main(int argc, char** argv)
         screenWidth,
         screenHeight
     );
+    for (size_t i{ 0 }; i < 2; ++i)
+    {
+        smoothBufs[i].Initialize(
+            false,
+            screenWidth,
+            screenHeight
+        );
+    }
     smoothProg.BuildFiles("../shaders/plane.vert", "../shaders/smooth.frag");
 
     // rendering plane initialization
@@ -245,30 +254,44 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
-    smoothBuf.Bind();
-    glClear(GL_DEPTH_BUFFER_BIT);
-    float myPi = M_PI;
-    float myE = M_E;
+    bool horizontal{ true };
+    smoothBufs[0].Bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
-    smoothProg.SetUniform("e", myPi);
-    smoothProg.SetUniform("pi", myE);
+    smoothProg.SetUniform("horizontal", !horizontal);
+    smoothProg.SetUniform("near", cam.getNearClip());
+    smoothProg.SetUniform("far", cam.getFarClip());
+    smoothProg.SetUniform("verticalResolution", glutGet(GLUT_WINDOW_HEIGHT));
+    smoothProg.SetUniform("verticalFOV", cam.GetFov());
     depthBuf.BindTexture(0);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();
-    smoothBuf.Unbind();
+    smoothBufs[0].Unbind();
+
+    const int amount{ 5 };
+    for (size_t i{ 0 }; i < amount; ++i)
+    {
+        smoothBufs[!horizontal].BindTexture(horizontal);
+        smoothBufs[horizontal].Bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        smoothProg.SetUniform("depthTex", horizontal);
+        smoothProg.SetUniform("horizontal", horizontal);
+
+        glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+        smoothBufs[horizontal].Unbind();
+        horizontal = !horizontal;
+    }
 
     // render the final texture
-    // float scale = 2.0f * tan(cam.GetFov() / 2.0f);
-    // glClear(GL_DEPTH_BUFFER_BIT);
-
-    int imWidth = cam.GetImgWidth();
-    int imHeight = cam.GetImgHeight();
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
+    const float scale = 2.0f * tan(cam.GetFov() / 2.0f);
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
@@ -292,9 +315,8 @@ void renderScene()
     //     std::cout << err << std::endl;;
     // } 
     glBindTexture(GL_TEXTURE_CUBE_MAP, bgMap.GetTextureID());
+    smoothBufs[!horizontal].BindTexture(2);
 
-
-    plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 

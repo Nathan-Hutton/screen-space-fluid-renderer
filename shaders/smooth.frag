@@ -1,66 +1,68 @@
-#version 330 core
+#version 460
 
 layout(location = 0) out vec4 color;
 
-in vec2 texCoords;
-
 uniform sampler2D depthTex;
-uniform float e;    // mathematical constant
-uniform float pi;   // mathematical constant
+uniform bool horizontal; // Horizontal or vertical pass
+uniform float near;
+uniform float far;
+uniform int verticalResolution;
+uniform float verticalFOV;
 
-float filterRadius = 0.5;
-float delta;
-float mu;
-
-float compute_weight2D(vec2 r, float two_sigma2)
+// We need unnormalized camera depth values
+float getCameraSpaceDepthValue(float normalizedDepth)
 {
-    return exp(-dot(r, r) / two_sigma2);
+    float value = normalizedDepth * 2.0 - 1.0; // Bring values to [-1, 1] range
+    return (2.0 * near * far) / (far + near - value * (far - near));
+}
+
+float getAdjustableStandardDeviation(float worldSpaceSmooth, float cameraDepth)
+{
+    return (verticalResolution * worldSpaceSmooth) / (2.0 * abs(cameraDepth) * tan(verticalFOV * 0.5));
+}
+
+float compute_weight1D(float x, float two_sigma2)
+{
+    return exp(- (x * x) / two_sigma2);
 }
 
 void main()
 {
-    float depth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if ( depth >= 1.0 ) {
+    // let's try a basic gaussian filter
+    float centerDepth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
+    if ( centerDepth >= 1.0 ) {
         gl_FragDepth = 1.0;
+        color = vec4(1.0);
         return;
     }
 
-    // let's try a basic gaussian filter
-    float sigma = 10.0;
-    float two_sigma2 = 2.0 * sigma * sigma;
-    float total = depth;
-    float wgtNorm = 1.0;
+    // Compute standard deviation
+    const float worldSigma = 0.2;
+    float viewDistance = getCameraSpaceDepthValue(centerDepth);
+    float sigma = getAdjustableStandardDeviation(worldSigma, viewDistance);
+    sigma = clamp(sigma, 0.5, 15.0);
+    const float two_sigma2 = 2.0 * sigma * sigma;
 
-    for (float i = 1.0; i < sigma * 3.0; i++) {
-        for (float j = 1.0; j < sigma * 3.0; j++) {
-            float depth1 = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(i, j), 0).r;
-            float depth2 = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(-i, j), 0).r;
-            float depth3 = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(i, -j), 0).r;
-            float depth4 = texelFetch(depthTex, ivec2(gl_FragCoord.xy) + ivec2(-i, -j), 0).r;
+    ivec2 center = ivec2(gl_FragCoord.xy);
+    ivec2 offset = horizontal ? ivec2(1, 0) : ivec2(0, 1);
 
-            float weight = compute_weight2D(vec2(i, j), two_sigma2);
+    float smoothedDepth = 0.0;
+    float weightNorm = 0.0;
 
-
-            total += weight * (depth1 + depth2 + depth3 + depth4);
-            wgtNorm += weight * 4;
+    int radius = int(ceil(3.0 * sigma));
+    for (int i = -radius; i <= radius; ++i)
+    {
+        ivec2 samplePos = center + i * offset;
+        float depth = texelFetch(depthTex, samplePos, 0).r;
+        if (depth < 1.0)
+        {
+            float weight = compute_weight1D(float(i), two_sigma2);
+            smoothedDepth += weight * depth;
+            weightNorm += weight;
         }
-        
-
-        // float expon = -(pow(i, 2.0) / (2.0 * pow(sigma, 2)));
-        // float denom = sqrt(2.0 * pi) * sigma;
-        // float weight = pow(e, expon) / denom;
-
-        // if (i == 0) {   // this is the center, and should only be counted once
-        //     total += weight * depth1;
-        //     wgtNorm += weight;
-        // }
-        // else {
-        //     total += weight * (depth1 + depth2);
-        //     wgtNorm += 2 * weight;
-        // }
     }
-    total /= wgtNorm;
-    // gl_FragDepth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
-    gl_FragDepth = total;
-    color = vec4(total, total, total, 1.0);
+
+    smoothedDepth /= weightNorm;
+    gl_FragDepth = smoothedDepth;
+    color = vec4(smoothedDepth, smoothedDepth, smoothedDepth, 1.0);
 }
