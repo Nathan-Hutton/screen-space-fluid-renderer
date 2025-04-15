@@ -17,6 +17,7 @@ cy::Matrix4f viewProjectionTransform;
 cy::Matrix4f viewProjectionInverse;
 EnvironmentMap environmentMap;
 Model plane;
+Model floorPlane;
 
 cy::GLRenderDepth2D depthBuf;     // depth buffer texutre
 cy::GLSLProgram    depthProg;    // program to render the depth buffer
@@ -110,6 +111,11 @@ int main(int argc, char** argv)
     plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
     plane.Initialize();
 
+    floorPlane.LoadOBJFile("../data/Floor/Floor.obj");
+    floorPlane.DifTexSetup();
+    floorPlane.CompileShaders("../shaders/floorPlane.vert", "../shaders/floorPlane.frag");
+    floorPlane.Initialize();
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
@@ -133,6 +139,18 @@ void renderScene()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     environmentMap.render(viewProjectionInverse);
+
+    // render the floor plane here??
+    glClear(GL_DEPTH_BUFFER_BIT);
+    cy::GLSLProgram* floorProg = floorPlane.GetProgram();
+    floorProg->Bind();
+    floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
+    floorProg->SetUniform("difTex", 0);
+    floorPlane.GetDif().Bind(0);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
 
     // render the depth buffer
     depthBuf.Bind();
@@ -167,14 +185,20 @@ void renderScene()
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
 
+    // printf("%f, %f, %f, %f\n", invView[0], invView[4], invView[8], invView[12]);
+    // printf("%f, %f, %f, %f\n", invView[1], invView[5], invView[9], invView[13]);
+    // printf("%f, %f, %f, %f\n", invView[2], invView[6], invView[10], invView[14]);
+    // printf("%f, %f, %f, %f\n", invView[3], invView[7], invView[11], invView[15]);
+
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
 
-    program->RegisterUniform(0, "invProjectionMatrix");
-    program->SetUniformMatrix4(0, &invProj[0]);
-    program->RegisterUniform(1, "invViewMatrix");
-    program->SetUniformMatrix4(1, &invView[0]);
+    // program->RegisterUniform(0, "invProjectionMatrix");
+    // program->RegisterUniform(1, "invViewMatrix");
+    program->SetUniformMatrix4("invProjectionMatrix", &invProj[0]);
+    program->SetUniformMatrix4("invViewMatrix", &invView[0]);
     program->SetUniform("depthTex", 1);
+    program->SetUniform("env", 2);
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     // program->SetUniform("scale", scale);
@@ -182,6 +206,10 @@ void renderScene()
     // program->SetUniform4("lightView", &lightView[0]);
     
     smoothBuf.BindTexture(1);
+
+    //bind environment map
+    glActiveTexture(GL_TEXTURE0+2);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap.GetTextureID());
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);

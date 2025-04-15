@@ -94,6 +94,8 @@ class EnvironmentMap
         glDepthMask(GL_TRUE);
     }
 
+    GLuint GetTextureID() { return m_textureID; }
+
     private:
         GLuint m_textureID;
         GLuint m_planeVAO;
