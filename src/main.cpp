@@ -187,10 +187,6 @@ GLuint renderCubeMap()
     glViewport(0, 0, (int)resolution, (int)resolution);
     glBindFramebuffer(GL_FRAMEBUFFER, CM_FBO);
 
-    // Camera capture_cam;
-    // capture_cam.temp_cam = true;
-    // capture_cam.projectionMatrix = shadowProj;
-    // capture_cam.transform.Position = position;
     for (size_t i = 0; i < 6; i++)
     {
         cy::Matrix4f view = views[i];
@@ -220,76 +216,6 @@ GLuint renderCubeMap()
 
     return textureID;
 }
-
-/*void renderCubeMap()
-{
-    bgMap.init();
-    unsigned int cubeWidth = bgMap.GetWidth();
-    unsigned int cubeHeight = bgMap.GetHeight();
-    GLuint bgTexID = bgMap.GetTextureID();
-
-    // generate the frame buffer
-    GLuint faceFrameBuff;
-    GLuint depthBuff;
-    glGenFramebuffers(1, &faceFrameBuff);
-    glGenRenderbuffers(1, &depthBuff);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, bgTexID);
-
-    glBindRenderbuffer(GL_RENDERBUFFER, depthBuff);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, cubeWidth, cubeHeight );
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuff);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuff);
-
-    cy::Matrix4f project = cy::Matrix4f().Perspective(M_PI/2.0f, 1.0, 0.1, 1000);
-    // cy::GLSLProgram cubeProg = cy::GLSLProgram();
-    // cubeProg.BuildFiles("../shaders/cubeRender.vert", "../shaders/cubeRender.frag");
-    float x_list[6] = {1.0, -1.0, 0.0, 0.0, 0.0, 0.0};
-    float y_list[6] = {0.0, 0.0, 1.0, -1.0, 0.0, 0.0};
-    float z_list[6] = {0.0, 0.0, 0.0, 0.0, 1.0, -1.0};
-
-    cy::Vec3f from = cy::Vec3f(0.0, 0.5, 0.0);
-
-    for (size_t i = 0; i < 6; i++) {
-        cy::Vec3f at = cy::Vec3f(x_list[i], y_list[i], z_list[i]);
-        cy::Vec3f up = cy::Vec3f(0.0, 1.0, 0.0);
-        if (i == 3) up = cy::Vec3f(0.0, 0.0, 1.0);
-
-        // cy::GLRenderTexture2D face = cy::GLRenderTexture2D();
-        // face.Initialize(true, 4, cubeWidth, cubeHeight);
-        // // bind appropraite frame buffer
-        // face.Bind();
-        // use the frame buffer as the cube face
-
-        // bind frame buffer
-        glBindTexture(GL_TEXTURE_CUBE_MAP, bgTexID);
-        glBindFramebuffer( GL_FRAMEBUFFER, faceFrameBuff );
-        glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, bgTexID, 0);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // set camera parameters accordingly
-        cy::Matrix4f view = cy::Matrix4f().View(from, at, up);
-        cy::Matrix4f vp = project * view;
-        cy::Matrix4f vpInv = vp.GetInverse();
-
-        // render environment and plane
-        // environmentMap.render(vpInv);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        cy::GLSLProgram* floorProg = floorPlane.GetProgram();
-        floorProg->Bind();
-        floorProg->SetUniformMatrix4("mvp", &vp[0]);
-        floorProg->SetUniform("difTex", 0);
-        floorPlane.GetDif().Bind(0);
-
-        floorPlane.Bind();
-        glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
-        floorPlane.Unbind();
-    }
-    // glutSwapBuffers();
-}*/
-
 
 void renderScene()
 {
