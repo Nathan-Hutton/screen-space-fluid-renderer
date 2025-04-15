@@ -159,6 +159,10 @@ void renderScene()
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
     smoothProg.SetUniform("horizontal", !horizontal);
+    smoothProg.SetUniform("near", cam.getNearClip());
+    smoothProg.SetUniform("far", cam.getFarClip());
+    smoothProg.SetUniform("verticalResolution", glutGet(GLUT_WINDOW_HEIGHT));
+    smoothProg.SetUniform("verticalFOV", cam.GetFov());
     depthBuf.BindTexture(0);
 
     plane.Bind();
