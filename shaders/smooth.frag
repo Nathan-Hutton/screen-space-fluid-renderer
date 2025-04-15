@@ -20,7 +20,11 @@ void main()
         return;
     }
 
-    const float sigma = 10.0;
+    float minSigma = 3.0;
+    float maxSigma = 20.0;
+
+    float sigma = mix(minSigma, maxSigma, centerDepth);
+    //const float sigma = 10.0;
     const float two_sigma2 = 2.0 * sigma * sigma;
 
     ivec2 center = ivec2(gl_FragCoord.xy);
