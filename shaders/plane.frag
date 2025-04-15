@@ -95,29 +95,6 @@ void main()
 
     vec3 normal = normalize(cross(dzx, dzy));
 
-    // --------------------------------------------- //
-    /*float depth = LinearizeDepth(gl_FragCoord.xy);
-
-    float w_float = float(imgW);
-    float h_float = float(imgH);
-    float dx = depth * scale;
-    float dy = dx * h_float / w_float;
-
-    dx = dx / w_float;
-    dy = dy / h_float;
-
-    float dzx = LinearizeDepth(ivec2(gl_FragCoord.xy) + ivec2(1, 0)) - depth;
-    float dzy = LinearizeDepth(ivec2(gl_FragCoord.xy) + ivec2(0, 1)) - depth;
-
-    // if (dzx == 0 || dzy == 0) {
-    if ( texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r >= 1.0 ) {
-        color = vec4(0, 0, 0, 0);
-        return;
-    }
-
-    vec3 normal = normalize(cross(vec3(dx, 0.0, -dzx), vec3(0.0, dy, -dzy)));*/
-    // --------------------------------------------- //
-
     // now we need to actually do some shading with this normal value
     // get light position in screen space
     // vec4 lightNorm = lightView / abs(lightView.w);
