@@ -6,7 +6,6 @@
 #include "Particles.h"
 #include "CacheHandler.h"
 #include "EnvironmentMap.h"
-// #include "Plane.h"
 
 #define _USE_MATH_DEFINES
 
@@ -51,10 +50,6 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);
 
     // camera initialization
     cam = Camera(screenWidth, screenHeight);
@@ -130,7 +125,6 @@ int main(int argc, char** argv)
     floorPlane.Initialize();
 
     bgMapID = renderCubeMap();
-    // printf("texture ID: %d\n", bgMapID);
     bgMap.initFromExisting(bgMapID);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -159,12 +153,6 @@ GLuint renderCubeMap()
     glGenFramebuffers(1, &CM_FBO);
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    // unsigned int m_CubemapDepthRBO;
-    // glGenRenderbuffers(1, &m_CubemapDepthRBO);
-    // glBindRenderbuffer(GL_RENDERBUFFER, m_CubemapDepthRBO);
-    // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)resolution, (int)resolution);
-    // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_CubemapDepthRBO);
 
     for (unsigned int i = 0; i < 6; i++)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, resolution, resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -239,8 +227,6 @@ void renderScene()
     floorProg->SetUniform("difTex", 0);
     floorPlane.GetDif().Bind(0);
 
-    // bgMap.render(viewProjectionInverse);
-
     floorPlane.Bind();
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
     floorPlane.Unbind();
@@ -289,7 +275,6 @@ void renderScene()
     // render the final texture
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
-    const float scale = 2.0f * tan(cam.GetFov() / 2.0f);
     const int imWidth = cam.GetImgWidth();
     const int imHeight = cam.GetImgHeight();
 
@@ -303,25 +288,14 @@ void renderScene()
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     
-    smoothBuf.BindTexture(0);
-
-    //bind environment map
-    // unsigned int err = 0;
-    // while((err = glGetError()) != GL_NO_ERROR){
-    //     // std::cout << err;
-    // }  
     glActiveTexture(GL_TEXTURE0+1);
-    // while((err = glGetError()) != GL_NO_ERROR){
-    //     std::cout << err << std::endl;;
-    // } 
     glBindTexture(GL_TEXTURE_CUBE_MAP, bgMap.GetTextureID());
-    smoothBufs[!horizontal].BindTexture(2);
+    smoothBufs[!horizontal].BindTexture(0);
 
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
     environmentMap.render(viewProjectionInverse);
-
 
     glutSwapBuffers();
 }
