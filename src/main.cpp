@@ -84,6 +84,14 @@ int main(int argc, char** argv)
         screenWidth,
         screenHeight
     );
+    for (size_t i{ 0 }; i < 2; ++i)
+    {
+        smoothBufs[i].Initialize(
+            false,
+            screenWidth,
+            screenHeight
+        );
+    }
     smoothProg.BuildFiles("../shaders/plane.vert", "../shaders/smooth.frag");
 
     // rendering plane initialization
