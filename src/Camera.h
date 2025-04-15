@@ -56,5 +56,7 @@ public:
 
 	float GetImgWidth() { return m_imWidth; }
 	float GetImgHeight() { return m_imHeight; }
+    float getNearClip() { return m_nearClip; }
+    float getFarClip() { return m_farClip; }
 };
 
