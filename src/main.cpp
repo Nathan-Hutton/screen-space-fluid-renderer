@@ -152,17 +152,31 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
-    smoothBuf.Bind();
+    smoothBufs[0].Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
+    smoothProg.SetUniform("horizontal", 0);
     depthBuf.BindTexture(0);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
-    smoothBuf.Unbind();
+    smoothBufs[0].Unbind();
+
+    // New stuff
+    smoothBufs[0].BindTexture(1);
+
+    smoothBufs[1].Bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    smoothProg.SetUniform("depthTex", 1);
+    smoothProg.SetUniform("horizontal", 1);
+
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    smoothBufs[1].Unbind();
 
     // render the final texture
     const float scale = 2.0f * tan(cam.GetFov() / 2.0f);
@@ -172,11 +186,11 @@ void renderScene()
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
 
-    program->SetUniform("depthTex", 1);
+    program->SetUniform("depthTex", 2);
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     program->SetUniform("scale", scale);
-    smoothBuf.BindTexture(1);
+    smoothBufs[1].BindTexture(2);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
