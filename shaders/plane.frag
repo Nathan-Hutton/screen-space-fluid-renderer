@@ -74,15 +74,19 @@ vec3 calcSpecular(vec3 specColor, vec3 normal, vec3 lightDir, vec3 viewDir, floa
 
 void main()
 {
-    if ( texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r >= 1.0 ) {
-        color = vec4(0, 0, 0, 0);
+    float eyeDepth = texture(depthTex, texCoords).x;
+    if ( eyeDepth >= 1.0 ) {
+        // color = vec4(1, 0, 0, 0);
+        discard;    // uhhhh this might not be best practice, i'll look that up later
         return;
     }
+    // color = vec4(eyeDepth, eyeDepth, eyeDepth, 1.0);
+    // return;
+
 
     float pixelWidth  = 1 / float(imgW);
     float pixelHeight = 1 / float(imgW);
     
-    float eyeDepth = texture(depthTex, texCoords).x;
     float xDepth = texture(depthTex, texCoords + vec2(pixelWidth, 0)).x;
     float yDepth = texture(depthTex, texCoords + vec2(0, pixelHeight)).x;
 

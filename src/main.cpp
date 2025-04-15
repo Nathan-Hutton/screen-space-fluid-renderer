@@ -50,6 +50,8 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_BACK);
 
@@ -149,11 +151,11 @@ GLuint renderCubeMap()
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-    unsigned int m_CubemapDepthRBO;
-    glGenRenderbuffers(1, &m_CubemapDepthRBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_CubemapDepthRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)resolution, (int)resolution);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_CubemapDepthRBO);
+    // unsigned int m_CubemapDepthRBO;
+    // glGenRenderbuffers(1, &m_CubemapDepthRBO);
+    // glBindRenderbuffer(GL_RENDERBUFFER, m_CubemapDepthRBO);
+    // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int)resolution, (int)resolution);
+    // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_CubemapDepthRBO);
 
     for (unsigned int i = 0; i < 6; i++)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, resolution, resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -221,17 +223,14 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // bgMap.render(viewProjectionInverse);
-
-    environmentMap.render(viewProjectionInverse);
-
     // render the floor plane here??
-    glClear(GL_DEPTH_BUFFER_BIT);
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
     floorProg->SetUniform("difTex", 0);
     floorPlane.GetDif().Bind(0);
+
+    // bgMap.render(viewProjectionInverse);
 
     floorPlane.Bind();
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
@@ -247,7 +246,7 @@ void renderScene()
 
     // create a smoothed depth buffer
     smoothBuf.Bind();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
     float myPi = M_PI;
     float myE = M_E;
 
@@ -264,6 +263,8 @@ void renderScene()
 
     // render the final texture
     // float scale = 2.0f * tan(cam.GetFov() / 2.0f);
+    // glClear(GL_DEPTH_BUFFER_BIT);
+
     int imWidth = cam.GetImgWidth();
     int imHeight = cam.GetImgHeight();
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
@@ -274,20 +275,31 @@ void renderScene()
 
     program->SetUniformMatrix4("invProjectionMatrix", &invProj[0]);
     program->SetUniformMatrix4("invViewMatrix", &invView[0]);
-    program->SetUniform("depthTex", 1);
-    program->SetUniform("env", 2);
+    program->SetUniform("depthTex", 0);
+    program->SetUniform("env", 1);
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     
-    smoothBuf.BindTexture(1);
+    smoothBuf.BindTexture(0);
 
     //bind environment map
-    glActiveTexture(GL_TEXTURE0+2);
+    // unsigned int err = 0;
+    // while((err = glGetError()) != GL_NO_ERROR){
+    //     // std::cout << err;
+    // }  
+    glActiveTexture(GL_TEXTURE0+1);
+    // while((err = glGetError()) != GL_NO_ERROR){
+    //     std::cout << err << std::endl;;
+    // } 
     glBindTexture(GL_TEXTURE_CUBE_MAP, bgMap.GetTextureID());
+
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
+
+    environmentMap.render(viewProjectionInverse);
+
 
     glutSwapBuffers();
 }

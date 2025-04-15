@@ -47,10 +47,10 @@ class EnvironmentMap
         // ***************************
         const std::vector<GLfloat> environmentMapPlaneVertices
         {
-            -1.0f, -1.0f, 0.999f, // Bottom left
-            1.0f, -1.0f, 0.999f,  // Bottom right
-            -1.0f, 1.0f, 0.999f,  // Top left
-            1.0f, 1.0f, 0.999f,   // Top right
+            -1.0f, -1.0f, 0.99f, // Bottom left
+            1.0f, -1.0f, 0.99f,  // Bottom right
+            -1.0f, 1.0f, 0.99f,  // Top left
+            1.0f, 1.0f, 0.99f,   // Top right
         };
 
         GLuint environmentMapPlaneVBO;
@@ -92,10 +92,10 @@ class EnvironmentMap
         // ***************************
         const std::vector<GLfloat> environmentMapPlaneVertices
         {
-            -1.0f, -1.0f, 0.999f, // Bottom left
-            1.0f, -1.0f, 0.999f,  // Bottom right
-            -1.0f, 1.0f, 0.999f,  // Top left
-            1.0f, 1.0f, 0.999f,   // Top right
+            -1.0f, -1.0f, 1.0f, // Bottom left
+            1.0f, -1.0f, 1.0f,  // Bottom right
+            -1.0f, 1.0f, 1.0f,  // Top left
+            1.0f, 1.0f, 1.0f,   // Top right
         };
 
         GLuint environmentMapPlaneVBO;
@@ -130,16 +130,17 @@ class EnvironmentMap
 
     void render(const cy::Matrix4f& viewProjectionInverse)
     {
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
 
-        glDepthMask(GL_FALSE);
+        // glDepthMask(GL_FALSE);
         glUseProgram(m_shader);
 
         glUniformMatrix4fv(glGetUniformLocation(m_shader, "invViewProjection"), 1, GL_FALSE,  &viewProjectionInverse[0]);
 
         glBindVertexArray(m_planeVAO);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glDepthMask(GL_TRUE);
+        // glDepthMask(GL_TRUE);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     }
