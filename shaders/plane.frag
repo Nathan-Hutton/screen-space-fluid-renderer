@@ -111,7 +111,7 @@ void main()
     // vec3 lightDir = normalize(lightPos - fragPos);
     vec3 viewDir = normalize(camPosWorld - vec3(worldPos));
 
-    // //------ when it comes to the above light and view calculations, i suspect i did something wrong -----//
+    // //------ when it comes to the above normal, light, and view calculations, i suspect i did something wrong -----//
 
     // // material parameters
     // vec3 difColor = vec3(0.0, 1.0, 1.0);
