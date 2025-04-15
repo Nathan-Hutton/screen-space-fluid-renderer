@@ -152,31 +152,33 @@ void renderScene()
     depthBuf.Unbind();
 
     // create a smoothed depth buffer
+    bool horizontal{ true };
     smoothBufs[0].Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
-    smoothProg.SetUniform("horizontal", 0);
+    smoothProg.SetUniform("horizontal", !horizontal);
     depthBuf.BindTexture(0);
 
     plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();
     smoothBufs[0].Unbind();
 
-    // New stuff
-    smoothBufs[0].BindTexture(1);
+    const int amount{ 5 };
+    for (size_t i{ 0 }; i < amount; ++i)
+    {
+        smoothBufs[!horizontal].BindTexture(horizontal);
+        smoothBufs[horizontal].Bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    smoothBufs[1].Bind();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    smoothProg.SetUniform("depthTex", 1);
-    smoothProg.SetUniform("horizontal", 1);
+        smoothProg.SetUniform("depthTex", horizontal);
+        smoothProg.SetUniform("horizontal", horizontal);
 
-    plane.Bind();
-    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();
-    smoothBufs[1].Unbind();
+        glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+        smoothBufs[horizontal].Unbind();
+        horizontal = !horizontal;
+    }
 
     // render the final texture
     const float scale = 2.0f * tan(cam.GetFov() / 2.0f);
@@ -190,9 +192,8 @@ void renderScene()
     program->SetUniform("imgW", imWidth);
     program->SetUniform("imgH", imHeight);
     program->SetUniform("scale", scale);
-    smoothBufs[1].BindTexture(2);
+    smoothBufs[!horizontal].BindTexture(2);
 
-    plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
