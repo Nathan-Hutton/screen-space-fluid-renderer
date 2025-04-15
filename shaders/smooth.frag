@@ -40,7 +40,7 @@ void main()
     const float worldSigma = 0.2;
     float viewDistance = getCameraSpaceDepthValue(centerDepth);
     float sigma = getAdjustableStandardDeviation(worldSigma, viewDistance);
-    sigma = clamp(sigma, 2.0, 15.0);
+    sigma = clamp(sigma, 0.5, 15.0);
     const float two_sigma2 = 2.0 * sigma * sigma;
 
     ivec2 center = ivec2(gl_FragCoord.xy);
