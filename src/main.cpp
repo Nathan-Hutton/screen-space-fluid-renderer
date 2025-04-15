@@ -273,6 +273,7 @@ void renderScene()
     }
 
     // render the final texture
+    cy::Matrix4f proj = cam.GetProj();
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
     const int imWidth = cam.GetImgWidth();
@@ -283,6 +284,7 @@ void renderScene()
 
     program->SetUniformMatrix4("invProjectionMatrix", &invProj[0]);
     program->SetUniformMatrix4("invViewMatrix", &invView[0]);
+    program->SetUniformMatrix4("projMatrix", &proj[0]);
     program->SetUniform("depthTex", 0);
     program->SetUniform("env", 1);
     program->SetUniform("imgW", imWidth);
