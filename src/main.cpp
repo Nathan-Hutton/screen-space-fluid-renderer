@@ -10,6 +10,7 @@
 #define _USE_MATH_DEFINES
 
 Camera cam;
+Camera lightCam;
 Particles sim = Particles();
 CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
@@ -26,6 +27,10 @@ cy::GLSLProgram    depthProg;    // program to render the depth buffer
 cy::GLRenderDepth2D smoothBufs[2];
 cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
+
+cy::Matrix4f lvp;
+cy::GLRenderTexture2D posMapBuf;   // buffer for plane positions map
+cy::GLSLProgram posMapProg;     // program to render the pos map
 
 bool run = false;
 
@@ -67,7 +72,6 @@ int main(int argc, char** argv)
     // cache handler initializaiton
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
-    // printf("radius: %f\n", sim.GetRadius());
 
     // render parameters initializaiton
     viewProjectionTransform = cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
@@ -125,13 +129,27 @@ int main(int argc, char** argv)
     plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
     plane.Initialize();
 
+    // floor plane setup
     floorPlane.LoadOBJFile("../data/Floor/Floor.obj");
     floorPlane.DifTexSetup();
     floorPlane.CompileShaders("../shaders/floorPlane.vert", "../shaders/floorPlane.frag");
     floorPlane.Initialize();
 
+    // cubemap including ground plane for correct reflections and refractions
     bgMapID = renderCubeMap();
     bgMap.initFromExisting(bgMapID);
+
+    // ----------------- caustics setup --------------------- //
+    lightCam = Camera(screenWidth, screenHeight);
+    lightCam.SetFarPlane(15.0);
+    // light view parameters
+    cy::Vec4f lightPos = cy::Vec4f(-3.0, 8.0, 7.0, 1.0);
+    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(), cy::Vec3f(0.0, 1.0, 0.0));
+    cy::Matrix4f lightProjMatrix = lightCam.GetProj();
+    lvp = lightProjMatrix * lightViewMatrix;
+
+    // position map program
+    posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glutDisplayFunc(renderScene);
@@ -228,7 +246,15 @@ void renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // render the floor plane here??
+    // floor plane positions map for caustics
+    posMapProg.Bind();
+    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
+
+    /*// render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
@@ -258,8 +284,6 @@ void renderScene()
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
     smoothProg.SetUniform("horizontal", !horizontal);
-    // smoothProg.SetUniform("near", cam.getNearClip());
-    // smoothProg.SetUniform("far", cam.getFarClip());
     smoothProg.SetUniform("verticalResolution", imHeight);
     smoothProg.SetUniform("verticalFOV", vertFov);
     depthBuf.BindTexture(0);
@@ -306,7 +330,7 @@ void renderScene()
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
-    environmentMap.render(viewProjectionInverse);
+    environmentMap.render(viewProjectionInverse);*/
 
     glutSwapBuffers();
 }
