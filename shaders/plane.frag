@@ -77,15 +77,13 @@ vec3 calcSpecular(vec3 specColor, vec3 normal, vec3 lightDir, vec3 viewDir, floa
 void main()
 {
     float eyeDepth = texture(depthTex, texCoords).x;
-    if ( eyeDepth >= 1.0 ) {
-        // color = vec4(1, 0, 0, 0);
-        discard;    // uhhhh this might not be best practice, i'll look that up later
+
+    if ( eyeDepth >= 1.0 ) {    // skip background fragments
+        discard;
         return;
     }
-    // color = vec4(eyeDepth, eyeDepth, eyeDepth, 1.0);
-    // return;
 
-
+    // normal calculations in world space
     float pixelWidth  = 1 / float(imgW);
     float pixelHeight = 1 / float(imgW);
     
@@ -106,31 +104,28 @@ void main()
 
     vec3 eyePos = uvToEye(texCoords, eyeDepth);
     vec3 viewDir = normalize(-eyePos);
-    viewDir = vec3(invViewMatrix* vec4(viewDir, 0));    //word coordinates
-
-    // //------ when it comes to the above normal, light, and view calculations, i suspect i did something wrong -----//
+    viewDir = vec3(invViewMatrix* vec4(viewDir, 0));
 
     // material parameters
+    // starting with fresnel fun
     float fresnelRatio    = clamp(F + (1.0 - F) * pow((1.0 - dot(viewDir, normal)), fresnelPower), 0, 1);
     vec3 reflDir = reflect( -viewDir, normal );
     vec3 refrDir = refract( -viewDir, normal, eta);
     vec3 reflColor = vec3(texture( env, reflDir ));
     vec3 refrColor = vec3(texture( env, refrDir ));
+
+    // combine refraction and reflection components based on fresnel ratio
     vec3 difColor = mix(refrColor, reflColor, fresnelRatio);
-    vec3 waterColor = vec3(0, 1, 1) * 0.5;
 
-    vec3 specColor = vec3(1.0, 1.0, 1.0);
-    float shine = 50.0;
-
-    // vec3 diffuse = calcDiffuse(difColor, normal, lightDir);
-    vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
-    // vec3 amb = 0.2 * difColor;
-
+    // make the water more blue. for fun
+    vec3 waterColor = vec3(0, 0.5, 1.0) * 0.5;
     difColor = mix(difColor, waterColor, 0.2);
-    vec3 total = clamp(difColor + spec, 0, 1);
-    // float alpha = clamp(spec.x * 2, 0.5, 1); // this is to make specular areas more opaque
 
-    // color = vec4(texture( env, viewDir ));
+    // add the specular highlights
+    vec3 specColor = vec3(1.0, 1.0, 1.0);
+    float shine = 50.0;     // i chose a high gloss so it doesn't look as metallic
+    vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
+    vec3 total = clamp(difColor + spec, 0, 1);
+
     color = vec4(total, 1.0);
-    // color = vec4(fresnelRatio, fresnelRatio, fresnelRatio, 1.0);
 }
