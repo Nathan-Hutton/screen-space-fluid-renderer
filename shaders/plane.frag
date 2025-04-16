@@ -111,25 +111,26 @@ void main()
     // //------ when it comes to the above normal, light, and view calculations, i suspect i did something wrong -----//
 
     // material parameters
-    float fresnelRatio    = clamp(F + (1.0 - F) * pow((1.0 - dot(-viewDir, normal)), fresnelPower), 0, 1);
+    float fresnelRatio    = clamp(F + (1.0 - F) * pow((1.0 - dot(viewDir, normal)), fresnelPower), 0, 1);
     vec3 reflDir = reflect( -viewDir, normal );
     vec3 refrDir = refract( -viewDir, normal, eta);
     vec3 reflColor = vec3(texture( env, reflDir ));
     vec3 refrColor = vec3(texture( env, refrDir ));
     vec3 difColor = mix(refrColor, reflColor, fresnelRatio);
-    // vec3 difColor = vec3(0, 1, 1);
+    vec3 waterColor = vec3(0, 1, 1) * 0.5;
 
     vec3 specColor = vec3(1.0, 1.0, 1.0);
-    float shine = 10.0;
+    float shine = 50.0;
 
-    vec3 diffuse = calcDiffuse(difColor, normal, lightDir);
+    // vec3 diffuse = calcDiffuse(difColor, normal, lightDir);
     vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
     // vec3 amb = 0.2 * difColor;
 
-    vec3 total = clamp(diffuse + spec, 0, 1);
+    difColor = mix(difColor, waterColor, 0.2);
+    vec3 total = clamp(difColor + spec, 0, 1);
     // float alpha = clamp(spec.x * 2, 0.5, 1); // this is to make specular areas more opaque
 
     // color = vec4(texture( env, viewDir ));
-    color = vec4(total, 1);
-    // color = vec4(dzy, 1.0);
+    color = vec4(total, 1.0);
+    // color = vec4(fresnelRatio, fresnelRatio, fresnelRatio, 1.0);
 }
