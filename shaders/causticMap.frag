@@ -5,24 +5,25 @@ layout(location = 0) out vec4 color;
 in vec2 texCoords;
 // in vec3 lightPos;
 
-uniform samplerCube env;
+// uniform samplerCube env;
 // uniform mat4 projectionMatrix;
+uniform sampler2D posMap;
 uniform mat4 invProjectionMatrix;
 uniform mat4 invViewMatrix;
-uniform mat4 projMatrix;
+uniform mat4 lvp;
 uniform sampler2D depthTex;
 uniform int imgW;
 uniform int imgH;
 // uniform float scale;
 // uniform vec4 lightView;
 
-vec3 lightPosWorld = vec3(1.0, 4.0, -3.0);
-vec3 camPosWorld = vec3(0.93, 0.47, -1.51);
+// vec3 lightPosWorld = vec3(-3.0, 8.0, 7.0);
+// vec3 camPosWorld = vec3(0.93, 0.47, -1.51);
 float zNear = 0.1;
-float zFar  = 5.0;
+float zFar  = 15.0;
 float eta = 1.0/1.33;
-float fresnelPower = 5.0;
-float F = ((1.0 - eta) * (1.0 - eta)) / ((1.0 + eta) * (1.0 + eta));
+// float fresnelPower = 5.0;
+// float F = ((1.0 - eta) * (1.0 - eta)) / ((1.0 + eta) * (1.0 + eta));
 
 float LinearizeDepth(vec2 uv)
 {
@@ -58,7 +59,7 @@ vec4 uvToWorld(vec2 texCoord, float eyeDepth)
     return worldPos;
 }
 
-vec3 calcDiffuse(vec3 difColor, vec3 normal, vec3 lightDir)
+/*vec3 calcDiffuse(vec3 difColor, vec3 normal, vec3 lightDir)
 {
 	float difAmount = max(dot(normal, lightDir), 0);
 	vec3 outColor =  difColor * difAmount;
@@ -72,7 +73,7 @@ vec3 calcSpecular(vec3 specColor, vec3 normal, vec3 lightDir, vec3 viewDir, floa
 	vec3 outColor = specColor * pow(cosPhi, shine);
 
 	return outColor;
-}
+}*/
 
 void main()
 {
@@ -99,14 +100,39 @@ void main()
 
     vec3 normal = normalize(cross(dzx, dzy));
 
-    // now we need to actually do some shading with this normal value
-    vec3 lightDir = normalize(lightPosWorld - vec3(worldPos));
+    /*// now we need to actually do some shading with this normal value
+    vec3 lightDir = normalize(lightPosWorld - vec3(worldPos));*/
 
     vec3 eyePos = uvToEye(texCoords, eyeDepth);
     vec3 viewDir = normalize(-eyePos);
     viewDir = vec3(invViewMatrix* vec4(viewDir, 0));
 
-    // material parameters
+    vec3 refrDir = normalize(refract( -viewDir, normal, eta));
+    // vec3 dest = estimateIntersection(worldPos.xyz, normalize(refrDir));
+
+    // initial estimate
+    vec3 p1 = worldPos.xyz + refrDir * 0.1; // world space estimate
+    vec3 p1_proj = (lvp * vec4(p1, 1.0)).xyz;
+    vec2 fetchCoords1 = (p1_proj.xy / 2.0 + 0.5) * vec2(imgW, imgH);
+    vec4 dest1 = texelFetch(posMap, ivec2(fetchCoords1), 0);
+    if (dest1.w == 0.0) {
+        discard;
+        return;
+    }
+    float d1 = length(worldPos.xyz - dest1.xyx);
+
+    // first (only?) real iteration
+    vec3 p2 = worldPos.xyz + refrDir * d1;
+    vec3 p2_proj = (lvp * vec4(p2, 1.0)).xyz;
+    vec2 fetchCoords2 = (p2_proj.xy / 2.0 + 0.5) * vec2(imgW, imgH);
+    vec4 dest2 = texelFetch(posMap, ivec2(fetchCoords2), 0);
+    if (dest2.w == 0.0) {
+        discard;
+        return;
+    }
+
+
+    /*// material parameters
     // starting with fresnel fun
     float fresnelRatio    = clamp(F + (1.0 - F) * pow((1.0 - dot(viewDir, normal)), fresnelPower), 0, 1);
     vec3 reflDir = reflect( -viewDir, normal );
@@ -126,7 +152,8 @@ void main()
     vec3 specColor = vec3(1.0, 1.0, 1.0);
     float shine = 50.0;     // i chose a high gloss so it doesn't look as metallic
     vec3 spec = calcSpecular(specColor, normal, lightDir, viewDir, shine);
-    vec3 total = clamp(difColor + spec, 0, 1);
+    vec3 total = clamp(difColor + spec, 0, 1);*/
 
-    color = vec4(total, 1.0);
+    color = vec4(dest2.xyz, 1.0);
+    // color = vec4((texelFetch(posMap, ivec2(gl_FragCoord.xy), 0)).xyz, 1.0);
 }

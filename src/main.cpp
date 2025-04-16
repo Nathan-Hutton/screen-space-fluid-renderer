@@ -29,8 +29,12 @@ cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
 cy::Matrix4f lvp;
+cy::Matrix4f lightProjInv;
+cy::Matrix4f lightViewInv;
 cy::GLRenderTexture2D posMapBuf;   // buffer for plane positions map
 cy::GLSLProgram posMapProg;     // program to render the pos map
+cy::GLRenderTexture2D causticMapBuf;   // buffer for caustics map
+cy::GLSLProgram causticMapProg;     // program to render the caustics map
 
 bool run = false;
 
@@ -143,15 +147,22 @@ int main(int argc, char** argv)
     lightCam = Camera(screenWidth, screenHeight);
     lightCam.SetFarPlane(15.0);
     // light view parameters
-    cy::Vec4f lightPos = cy::Vec4f(-3.0, 8.0, 7.0, 1.0);
+    cy::Vec4f lightPos = cy::Vec4f(1.0, 4.0, -3.0, 1.0);
     cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(), cy::Vec3f(0.0, 1.0, 0.0));
     cy::Matrix4f lightProjMatrix = lightCam.GetProj();
     lvp = lightProjMatrix * lightViewMatrix;
+    lightProjInv = lightProjMatrix.GetInverse();
+    lightViewInv = lightViewMatrix.GetInverse();
 
-    // position map program
+    // position map buffer and program
+    posMapBuf.Initialize(false, 4, screenWidth, screenHeight);
     posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // caustic map buffer and program
+    causticMapBuf.Initialize(false, 3, screenWidth, screenHeight);
+    causticMapProg.BuildFiles("../shaders/causticMap.vert", "../shaders/causticMap.frag");
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
     glutReshapeFunc(resizeWindow);
@@ -244,16 +255,48 @@ GLuint renderCubeMap()
 
 void renderScene()
 {
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // floor plane positions map for caustics
+    posMapBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
     posMapProg.Bind();
     posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
 
     floorPlane.Bind();
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
     floorPlane.Unbind();
+    posMapBuf.Unbind();
 
+    // create caustics texture, start with light depth buffer
+    depthBuf.Bind();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
+    depthProg.Bind();
+    sim.Render(lvp, depthProg);
+    depthBuf.Unbind();
+
+    // lets not even smooth this bad boy and go straight to getting the normals
+    // we can smooth later if we have to
+    causticMapProg.Bind();
+    causticMapProg.SetUniformMatrix4("invProjectionMatrix", &lightProjInv[0]);
+    causticMapProg.SetUniformMatrix4("invViewMatrix", &lightViewInv[0]);
+    causticMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+    causticMapProg.SetUniform("depthTex", 0);
+    causticMapProg.SetUniform("posMap", 1);
+    causticMapProg.SetUniform("imgW", imWidth);
+    causticMapProg.SetUniform("imgH", imHeight);
+    depthBuf.BindTexture(0);
+    posMapBuf.BindTexture(1);
+
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+
+    // ----------------------- finished caustics -------------------- //
     /*// render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
@@ -275,8 +318,6 @@ void renderScene()
 
     // create a smoothed depth buffer
     bool horizontal{ true };
-    const int imWidth = cam.GetImgWidth();
-    const int imHeight = cam.GetImgHeight();
     float vertFov = cam.GetFov() * imHeight / imWidth;
     smoothBufs[0].Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
