@@ -27,9 +27,12 @@ cy::GLRenderDepth2D smoothBufs[2];
 cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
+bool run = false;
+
 GLuint renderCubeMap();
 void renderScene();
 void update();
+void processInput(unsigned char key, [[maybe_unused]] int x, [[maybe_unused]] int y);
 
 int main(int argc, char** argv)
 {
@@ -62,6 +65,7 @@ int main(int argc, char** argv)
     // cache handler initializaiton
     ch.LoadSim("SphereDropGround");
     ch.LoadNextFrame(&sim);
+    // printf("radius: %f\n", sim.GetRadius());
 
     // render parameters initializaiton
     viewProjectionTransform = cam.GetProj() * cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0));
@@ -140,8 +144,10 @@ int main(int argc, char** argv)
 
 void update()
 {
-    ch.LoadNextFrame(&sim);
-    glutPostRedisplay();
+    if (run){
+        ch.LoadNextFrame(&sim);
+        glutPostRedisplay();
+    }
 }
 
 GLuint renderCubeMap()
@@ -241,16 +247,19 @@ void renderScene()
 
     // create a smoothed depth buffer
     bool horizontal{ true };
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
+    float vertFov = cam.GetFov() * imHeight / imWidth;
     smoothBufs[0].Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
     smoothProg.SetUniform("horizontal", !horizontal);
-    smoothProg.SetUniform("near", cam.getNearClip());
-    smoothProg.SetUniform("far", cam.getFarClip());
-    smoothProg.SetUniform("verticalResolution", glutGet(GLUT_WINDOW_HEIGHT));
-    smoothProg.SetUniform("verticalFOV", cam.GetFov());
+    // smoothProg.SetUniform("near", cam.getNearClip());
+    // smoothProg.SetUniform("far", cam.getFarClip());
+    smoothProg.SetUniform("verticalResolution", imHeight);
+    smoothProg.SetUniform("verticalFOV", vertFov);
     depthBuf.BindTexture(0);
 
     plane.Bind();
@@ -276,8 +285,6 @@ void renderScene()
     cy::Matrix4f proj = cam.GetProj();
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
-    const int imWidth = cam.GetImgWidth();
-    const int imHeight = cam.GetImgHeight();
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
@@ -300,4 +307,20 @@ void renderScene()
     environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
+}
+
+void processInput(unsigned char key, [[maybe_unused]] int x, [[maybe_unused]] int y)
+{
+    switch (key) {
+        case 27:
+            glutLeaveMainLoop();
+            break;
+        case ' ':
+            run = !run;
+            break;
+        case 's':
+            ch.LoadNextFrame(&sim);
+            break;
+    }
+    glutPostRedisplay();
 }

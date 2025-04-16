@@ -90,4 +90,6 @@ public:
     {
         m_positions.resize(numParticles);
     }
+
+    float GetRadius() { return m_radius; }
 };
