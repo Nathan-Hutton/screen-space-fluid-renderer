@@ -38,11 +38,13 @@ int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
-    const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
+    // const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
+    // const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
+    const int screenWidth{ 2048 };
+    const int screenHeight{ 1536 };
     glutInitWindowSize(screenWidth, screenHeight);
     glutCreateWindow("Fluid rendering");
-    glutFullScreen();
+    // glutFullScreen();
 
     const GLenum err{ glewInit() };
     if (err != GLEW_OK) {
