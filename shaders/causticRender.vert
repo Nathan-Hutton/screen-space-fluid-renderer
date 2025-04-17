@@ -25,6 +25,7 @@ void main()
     // world pos
     vec4 worldPos = translate * vec4(pos, 1);
     render = 1.0;
+    // testPos = vec3(1, 0, 1);
 
     // particle projected into light view
     vec4 lvpPos = lvp * translate * vec4(pos, 1);
@@ -60,5 +61,6 @@ void main()
     }
 
     vec4 outPos = mvp * vec4(dest2.xyz, 1.0);
-    gl_Position = outPos;
+    gl_Position = lvpPos;
+    testPos = dest2.xyz;
 }

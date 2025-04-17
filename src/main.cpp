@@ -65,6 +65,7 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPointSize(2.0);
 
     // camera initialization
     cam = Camera(screenWidth, screenHeight);
@@ -156,7 +157,23 @@ int main(int argc, char** argv)
     lightViewInv = lightViewMatrix.GetInverse();
 
     // position map buffer and program
-    posMapBuf.Initialize(false, 4, screenWidth, screenHeight);
+    posMapBuf.Initialize(false);
+    posMapBuf.Resize(4, screenWidth, screenHeight, cy::GL::TYPE_FLOAT);
+
+    // ugh we have to do everything ourselves huh
+    // GLuint posFramebufferID;
+    // GLuint posTextureID;
+	// glGenFramebuffers(1, &posFramebufferID);
+	// glBindFramebuffer(GL_FRAMEBUFFER, posFramebufferID);
+    // glGenTextures(1,&posTextureID);
+	// glBindTexture(GL_TEXTURE_2D, posTextureID);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, posTextureID, 0);
+	// glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	// 	this->texture.SetImage(textureFormat,GL_RGBA,GL_UNSIGNED_BYTE,nullptr,width,height);
+    // glTexImage2D(GL_TEXTURE_2D, 0, textureFormat,width,height,0,dataFormat,dataType,data)
+
     posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
 
     // caustic map buffer and program
@@ -264,7 +281,7 @@ void renderScene()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // render the floor plane here
+    /*// render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
@@ -336,9 +353,9 @@ void renderScene()
     smoothBufs[!horizontal].BindTexture(0);
 
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();
+    plane.Unbind();*/
 
-    /*// ----------------------------- caustics --------------------------- //
+    // ----------------------------- caustics --------------------------- //
     // floor plane positions map for caustics
     posMapBuf.Bind();
     glClear(GL_COLOR_BUFFER_BIT);
@@ -385,8 +402,8 @@ void renderScene()
     // posMapBuf.BindTexture(1);
     sim.RenderPoints(causticRenderProg, viewProjectionTransform, lvp, lgtPrjNrmBuf, posMapBuf);
 
-    // ------------------------------- finished caustics -------------------------- //*/
-    environmentMap.render(viewProjectionInverse);
+    // ------------------------------- finished caustics -------------------------- //
+    // environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
 }
