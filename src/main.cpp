@@ -149,8 +149,8 @@ int main(int argc, char** argv)
     lightCam = Camera(screenWidth, screenHeight);
     lightCam.SetFarPlane(15.0);
     // light view parameters
-    cy::Vec4f lightPos = cy::Vec4f(5.0, 2.0, -3.0, 1.0);
-    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(), cy::Vec3f(0.0, 1.0, 0.0));
+    cy::Vec4f lightPos = cy::Vec4f(2.5, 4.0, -1.5, 1.0);
+    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(0.5, 0.0, 0.5), cy::Vec3f(0.0, 1.0, 0.0));
     cy::Matrix4f lightProjMatrix = lightCam.GetProj();
     lvp = lightProjMatrix * lightViewMatrix;
     lightProjInv = lightProjMatrix.GetInverse();
@@ -159,21 +159,6 @@ int main(int argc, char** argv)
     // position map buffer and program
     posMapBuf.Initialize(false);
     posMapBuf.Resize(4, screenWidth, screenHeight, cy::GL::TYPE_FLOAT);
-
-    // ugh we have to do everything ourselves huh
-    // GLuint posFramebufferID;
-    // GLuint posTextureID;
-	// glGenFramebuffers(1, &posFramebufferID);
-	// glBindFramebuffer(GL_FRAMEBUFFER, posFramebufferID);
-    // glGenTextures(1,&posTextureID);
-	// glBindTexture(GL_TEXTURE_2D, posTextureID);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, posTextureID, 0);
-	// glDrawBuffer(GL_COLOR_ATTACHMENT0);
-	// 	this->texture.SetImage(textureFormat,GL_RGBA,GL_UNSIGNED_BYTE,nullptr,width,height);
-    // glTexImage2D(GL_TEXTURE_2D, 0, textureFormat,width,height,0,dataFormat,dataType,data)
-
     posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
 
     // caustic map buffer and program

@@ -17,7 +17,7 @@ out vec3 testPos;
 out vec2 uv;
 out float render;
 
-vec3 worldLightPos = vec3(5.0, 2.0, -3.0);
+vec3 worldLightPos = vec3(2.5, 4.0, -1.5);
 float eta = 1.0/1.33;
 
 void main()
@@ -61,6 +61,6 @@ void main()
     }
 
     vec4 outPos = mvp * vec4(dest2.xyz, 1.0);
-    gl_Position = lvpPos;
-    testPos = dest2.xyz;
+    gl_Position = outPos;
+    // testPos = dest2.xyz;
 }
