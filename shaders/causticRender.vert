@@ -7,7 +7,7 @@ layout(location=0) in vec3 pos;
 uniform mat4 translate;
 uniform mat4 lvp;
 uniform mat4 lightView;
-// uniform mat4 mvp;
+uniform mat4 mvp;
 uniform sampler2D depthMap;
 uniform sampler2D normalMap;
 uniform sampler2D posMap;

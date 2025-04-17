@@ -4,9 +4,11 @@
 // in vec3 LightDir;
 //in vec3 ViewDir;
 in vec2 texCoord;
+in vec3 ogPos;
 
 uniform sampler2D difTex;
-// uniform sampler2D spcTex;
+uniform sampler2D causticMap;
+uniform mat4 lvp;
 
 layout(location = 0) out vec4 color;
 
@@ -28,6 +30,11 @@ vec3 calcSpecular(vec3 specColor, vec3 normal, vec3 lightDir, vec3 viewDir, floa
 
 void main()
 {
+	vec4 lvpPos = lvp * vec4(ogPos, 1.0);
+	vec2 uv = (lvpPos.xy / lvpPos.w) / 2.0 + 0.5;
+	vec3 causColor = texture2D(causticMap, uv).xyz;
+	// causColor = texelFetch(causticMap, ivec2(gl_FragCoord.xy), 0).xyz;
+
 	// vec3 normal = normalize(Normal);
 	// vec3 lightDir = normalize(LightDir);
 	//vec3 viewDir = normalize(ViewDir);
@@ -43,5 +50,5 @@ void main()
 	//vec3 specular = calcSpecular(specColor, normal, lightDir, viewDir, shine);
 
 	// vec3 total = clamp(ambient + diffuse + specular, 0, 1);
-	color = vec4(difColor, 1);
+	color = vec4(causColor, 1);
 }
