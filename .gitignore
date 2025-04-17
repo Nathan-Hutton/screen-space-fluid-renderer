@@ -1,5 +1,11 @@
 build/*
-data/*
+data/Armadillo/*
+data/DamBreakBunny/*
+data/DamBreakLucy/*
+data/DamBreakTori/*
+data/SphereDropGround/*
+data/SphereEmitter/*
+data/SpheresDropTank/*
 .vscode/*
 report/*.swp
 report/*.aux
