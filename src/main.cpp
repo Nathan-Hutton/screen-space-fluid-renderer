@@ -356,7 +356,6 @@ void renderScene()
     causticMap.BuildTextureMipmaps();
     }
     // ------------------------------- finished caustics -------------------------- //
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();

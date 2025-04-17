@@ -19,11 +19,6 @@ float LinearizeDepth(ivec2 uv)
 
 void main()
 {
-	// float depthVal = LinearizeDepth(ivec2(gl_FragCoord.xy));
-	// color = vec4(depthVal, depthVal, depthVal, 1.0f);
-
-	// color = vec4(0, 1, 1, 1.0f);
-
     float depth = texelFetch(depthTex, ivec2(gl_FragCoord.xy), 0).r;
 
     float dx = depth * scale;

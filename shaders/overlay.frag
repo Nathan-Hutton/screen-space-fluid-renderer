@@ -20,9 +20,5 @@ void main()
         return;
     }
 
-	// vec3 difColor = vec3(texture(difTex, texCoord));
-
-	// vec3 total = mix(difColor, causColor, causColor.x);
-
 	color = vec4(1.0, 1.0, 1.0, causColor.x);
 }
