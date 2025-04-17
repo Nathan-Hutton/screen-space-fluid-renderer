@@ -355,11 +355,13 @@ void renderScene()
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
-    floorProg->SetUniform("difTex", 0);
-    floorProg->SetUniform("causticMap", 1);
     floorProg->SetUniformMatrix4("lvp", &lvp[0]);
-    floorPlane.GetDif().Bind(0);
-    causticMap.BindTexture(1);
+    floorProg->SetUniform("difTex", 1);
+    floorProg->SetUniform("depthMap", 0);
+    // floorProg->SetUniformMatrix4("lvp", &lvp[0]);
+    depthBuf.BindTexture(0);
+    // depthBuf.BindTexture(0);
+    floorPlane.GetDif().Bind(1);
 
     floorPlane.Bind();
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
@@ -425,6 +427,7 @@ void renderScene()
     glBindTexture(GL_TEXTURE_CUBE_MAP, bgMap.GetTextureID());
     smoothBufs[!horizontal].BindTexture(0);
 
+    plane.Bind();
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
