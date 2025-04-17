@@ -16,7 +16,7 @@ uniform int imgH;
 // uniform float scale;
 // uniform vec4 lightView;
 
-vec3 lightPosWorld = vec3(3.0, 2.0, -3.0);
+vec3 lightPosWorld = vec3(2.5, 1.5, -1.5);
 vec3 camPosWorld = vec3(0.93, 0.47, -1.51);
 float zNear = 0.1;
 float zFar  = 5.0;
@@ -35,7 +35,6 @@ vec3 uvToEye(vec2 texCoord, float depth)
 {
     float x  = texCoord.x * 2.0 - 1.0;
     float y  = texCoord.y * 2.0 - 1.0;
-    // float zn = ((zFar + zNear) / (zFar - zNear) * depth + 2 * zFar * zNear / (zFar - zNear)) / depth;
     float zn = LinearizeDepth(texCoord) * 2.0 - 1.0;
 
     vec4 clipPos = vec4(x, y, zn, 1.0f);
@@ -47,7 +46,6 @@ vec4 uvToWorld(vec2 texCoord, float eyeDepth)
 {
     float x  = texCoord.x * 2.0 - 1.0;
     float y  = texCoord.y * 2.0 - 1.0;
-    // float zn = ((zFar + zNear) / (zFar - zNear) * eyeDepth + 2 * zFar * zNear / (zFar - zNear)) / eyeDepth;
     float zn = LinearizeDepth(texCoord) * 2.0 - 1.0;
 
     vec4 clipPos = vec4(x, y, zn, 1.0f);
