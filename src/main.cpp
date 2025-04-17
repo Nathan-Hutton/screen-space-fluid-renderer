@@ -362,7 +362,7 @@ void renderScene()
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
     floorPlane.Unbind();
 
-    /*// render the depth buffer
+    // render the depth buffer
     depthBuf.Bind();
     glClear(GL_DEPTH_BUFFER_BIT);
     
@@ -423,9 +423,9 @@ void renderScene()
     smoothBufs[!horizontal].BindTexture(0);
 
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();*/
+    plane.Unbind();
 
-    // environmentMap.render(viewProjectionInverse);
+    environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
 }

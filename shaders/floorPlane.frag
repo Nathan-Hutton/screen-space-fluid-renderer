@@ -32,7 +32,7 @@ void main()
 {
 	vec4 lvpPos = lvp * vec4(ogPos, 1.0);
 	vec2 uv = (lvpPos.xy / lvpPos.w) / 2.0 + 0.5;
-	vec3 causColor = texture2D(causticMap, uv).xyz;
+	vec3 causColor = texture2D(causticMap, uv).xyz * 0.7;
 	// causColor = texelFetch(causticMap, ivec2(gl_FragCoord.xy), 0).xyz;
 
 	// vec3 normal = normalize(Normal);
@@ -49,6 +49,7 @@ void main()
 	// vec3 diffuse = calcDiffuse(difColor, normal, lightDir);
 	//vec3 specular = calcSpecular(specColor, normal, lightDir, viewDir, shine);
 
+	vec3 total = mix(difColor, causColor, causColor.x);
 	// vec3 total = clamp(ambient + diffuse + specular, 0, 1);
-	color = vec4(causColor, 1);
+	color = vec4(total, 1);
 }
