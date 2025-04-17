@@ -4,13 +4,15 @@ layout(location = 0) out vec4 color;
 
 uniform sampler2D depthTex;
 uniform bool horizontal; // Horizontal or vertical pass
-uniform float near;
-uniform float far;
 uniform int verticalResolution;
 uniform float verticalFOV;
 
-float narrowRangeThreshold = 0.0625f; // This is delta in the paper
-float mu = 0.00625f;
+// float narrowRangeThreshold = 0.0625f; // This is delta in the paper
+float particle_r = 0.00325f;
+float mu = particle_r;
+float narrowRangeThreshold = particle_r * 10;
+float near = 0.1;
+float far = 5.0;
 
 // We need unnormalized camera depth values
 float getCameraSpaceDepthValue(float normalizedDepth)
@@ -39,7 +41,8 @@ void main()
     }
 
     // Compute standard deviation
-    const float worldSigma = 0.2;
+    // const float worldSigma = 0.1;
+    const float worldSigma = 0.7 * particle_r; // from the paper
     const float viewDistance = getCameraSpaceDepthValue(centerDepth);
     float sigma = getAdjustableStandardDeviation(worldSigma, viewDistance);
     sigma = clamp(sigma, 0.5, 15.0);
@@ -56,9 +59,9 @@ void main()
     {
         const ivec2 samplePos = center + i * offset;
         const float depth = texelFetch(depthTex, samplePos, 0).r;
-        if (depth >= 1.0) continue;
-        const float weight = (depth < centerDepth - narrowRangeThreshold) ? 0.0f : gaussian_weight(float(i), two_sigma2); // Eliminate contributions that are too close to the camera
-        const float alteredDepth = (depth <= centerDepth + narrowRangeThreshold) ? depth : centerDepth + mu; // Limit depth values that are too far behind the center pixel
+        // if (depth >= 1.0) continue;
+        const float weight = (depth < (centerDepth - narrowRangeThreshold)) ? 0.0f : gaussian_weight(float(i), two_sigma2); // Eliminate contributions that are too close to the camera
+        const float alteredDepth = (depth <= (centerDepth + narrowRangeThreshold)) ? depth : centerDepth + mu; // Limit depth values that are too far behind the center pixel
 
         smoothedDepth += weight * alteredDepth;
         weightNorm += weight;

@@ -48,6 +48,7 @@ public:
 
 	void SetFov(float newFov) { m_fov = newFov; }
 	void SetPos(float x, float y, float z) { m_camDist = z; m_xPos = x; m_yPos = y; m_zPos = z; }
+	void SetFarPlane (float far) { m_farClip = far; }
 
 	void UpdateXRot(float delta) { m_xRot += delta; }
 	void UpdateYRot(float delta) { m_yRot += delta; }

@@ -10,6 +10,7 @@
 #define _USE_MATH_DEFINES
 
 Camera cam;
+Camera lightCam;
 Particles sim = Particles();
 CacheHandler ch = CacheHandler();
 cy::Matrix4f viewProjectionTransform;
@@ -27,19 +28,33 @@ cy::GLRenderDepth2D smoothBufs[2];
 cy::GLRenderDepth2D smoothBuf;    // buffer for smoothed depth map
 cy::GLSLProgram smoothProg;        // program to smooth the depth buffer
 
+cy::Matrix4f lvp;
+cy::Matrix4f lightProjInv;
+cy::Matrix4f lightViewInv;
+cy::GLRenderTexture2D posMapBuf;   // buffer for plane positions map
+cy::GLSLProgram posMapProg;     // program to render the pos map
+cy::GLRenderTexture2D lgtPrjNrmBuf;   // buffer for light projection normal map
+cy::GLSLProgram lgtPrjNrmProg;     // program to render the light projection normal map
+cy::GLSLProgram causticRenderProg;
+
+bool run = false;
+
 GLuint renderCubeMap();
 void renderScene();
 void update();
+void processInput(unsigned char key, [[maybe_unused]] int x, [[maybe_unused]] int y);
 
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-    const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
-    const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
+    // const int screenWidth{ glutGet(GLUT_SCREEN_WIDTH) };
+    // const int screenHeight{ glutGet(GLUT_SCREEN_HEIGHT) };
+    const int screenWidth{ 2048 };
+    const int screenHeight{ 1536 };
     glutInitWindowSize(screenWidth, screenHeight);
     glutCreateWindow("Fluid rendering");
-    glutFullScreen();
+    // glutFullScreen();
 
     const GLenum err{ glewInit() };
     if (err != GLEW_OK) {
@@ -119,15 +134,39 @@ int main(int argc, char** argv)
     plane.CompileShaders("../shaders/plane.vert", "../shaders/plane.frag");
     plane.Initialize();
 
+    // floor plane setup
     floorPlane.LoadOBJFile("../data/Floor/Floor.obj");
     floorPlane.DifTexSetup();
     floorPlane.CompileShaders("../shaders/floorPlane.vert", "../shaders/floorPlane.frag");
     floorPlane.Initialize();
 
+    // cubemap including ground plane for correct reflections and refractions
     bgMapID = renderCubeMap();
     bgMap.initFromExisting(bgMapID);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // ----------------- caustics setup --------------------- //
+    lightCam = Camera(screenWidth, screenHeight);
+    lightCam.SetFarPlane(15.0);
+    // light view parameters
+    cy::Vec4f lightPos = cy::Vec4f(5.0, 2.0, -3.0, 1.0);
+    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(), cy::Vec3f(0.0, 1.0, 0.0));
+    cy::Matrix4f lightProjMatrix = lightCam.GetProj();
+    lvp = lightProjMatrix * lightViewMatrix;
+    lightProjInv = lightProjMatrix.GetInverse();
+    lightViewInv = lightViewMatrix.GetInverse();
+
+    // position map buffer and program
+    posMapBuf.Initialize(false, 4, screenWidth, screenHeight);
+    posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
+
+    // caustic map buffer and program
+    lgtPrjNrmBuf.Initialize(false, 3, screenWidth, screenHeight);
+    // lgtPrjNrmBuf.SetTextureFilteringMode(GL_NEAREST, GL_NEAREST);
+    lgtPrjNrmProg.BuildFiles("../shaders/lgtPrjNormals.vert", "../shaders/lgtPrjNormals.frag");
+
+    causticRenderProg.BuildFiles("../shaders/causticRender.vert", "../shaders/causticRender.frag");
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glutDisplayFunc(renderScene);
     glutIdleFunc(update);
     glutReshapeFunc(resizeWindow);
@@ -140,8 +179,10 @@ int main(int argc, char** argv)
 
 void update()
 {
-    ch.LoadNextFrame(&sim);
-    glutPostRedisplay();
+    if (run){
+        ch.LoadNextFrame(&sim);
+        glutPostRedisplay();
+    }
 }
 
 GLuint renderCubeMap()
@@ -218,9 +259,12 @@ GLuint renderCubeMap()
 
 void renderScene()
 {
+    const int imWidth = cam.GetImgWidth();
+    const int imHeight = cam.GetImgHeight();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // render the floor plane here??
+    // render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
@@ -241,16 +285,15 @@ void renderScene()
 
     // create a smoothed depth buffer
     bool horizontal{ true };
+    float vertFov = cam.GetFov() * imHeight / imWidth;
     smoothBufs[0].Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     smoothProg.Bind();
     smoothProg.SetUniform("depthTex", 0);
     smoothProg.SetUniform("horizontal", !horizontal);
-    smoothProg.SetUniform("near", cam.getNearClip());
-    smoothProg.SetUniform("far", cam.getFarClip());
-    smoothProg.SetUniform("verticalResolution", glutGet(GLUT_WINDOW_HEIGHT));
-    smoothProg.SetUniform("verticalFOV", cam.GetFov());
+    smoothProg.SetUniform("verticalResolution", imHeight);
+    smoothProg.SetUniform("verticalFOV", vertFov);
     depthBuf.BindTexture(0);
 
     plane.Bind();
@@ -276,8 +319,6 @@ void renderScene()
     cy::Matrix4f proj = cam.GetProj();
     cy::Matrix4f invProj = cam.GetProj().GetInverse();
     cy::Matrix4f invView = cy::Matrix4f().View(ch.m_from, ch.m_at, cy::Vec3f(0, 1, 0)).GetInverse();
-    const int imWidth = cam.GetImgWidth();
-    const int imHeight = cam.GetImgHeight();
 
     cy::GLSLProgram* program = plane.GetProgram();
     program->Bind();
@@ -297,7 +338,71 @@ void renderScene()
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
+    /*// ----------------------------- caustics --------------------------- //
+    // floor plane positions map for caustics
+    posMapBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    posMapProg.Bind();
+    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
+    posMapBuf.Unbind();
+
+    // create caustics texture, start with light depth buffer
+    depthBuf.Bind();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
+    depthProg.Bind();
+    sim.Render(lvp, depthProg);
+    depthBuf.Unbind();
+
+    // lets not even smooth this bad boy and go straight to getting the normals
+    // we can smooth later if we have to
+    lgtPrjNrmBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    lgtPrjNrmProg.Bind();
+    lgtPrjNrmProg.SetUniformMatrix4("invProjectionMatrix", &lightProjInv[0]);
+    lgtPrjNrmProg.SetUniformMatrix4("invViewMatrix", &lightViewInv[0]);
+    lgtPrjNrmProg.SetUniformMatrix4("lvp", &lvp[0]);
+    lgtPrjNrmProg.SetUniform("depthTex", 0);
+    lgtPrjNrmProg.SetUniform("posMap", 1);
+    lgtPrjNrmProg.SetUniform("imgW", imWidth);
+    lgtPrjNrmProg.SetUniform("imgH", imHeight);
+    depthBuf.BindTexture(0);
+    posMapBuf.BindTexture(1);
+
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    lgtPrjNrmBuf.Unbind();
+
+    // let's draw some caustics baby
+    causticRenderProg.Bind();
+    // lgtPrjNrmBuf.BindTexture(0);
+    // posMapBuf.BindTexture(1);
+    sim.RenderPoints(causticRenderProg, viewProjectionTransform, lvp, lgtPrjNrmBuf, posMapBuf);
+
+    // ------------------------------- finished caustics -------------------------- //*/
     environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
+}
+
+void processInput(unsigned char key, [[maybe_unused]] int x, [[maybe_unused]] int y)
+{
+    switch (key) {
+        case 27:
+            glutLeaveMainLoop();
+            break;
+        case ' ':
+            run = !run;
+            break;
+        case 's':
+            ch.LoadNextFrame(&sim);
+            break;
+    }
+    glutPostRedisplay();
 }

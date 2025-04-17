@@ -16,7 +16,7 @@ uniform int imgH;
 // uniform float scale;
 // uniform vec4 lightView;
 
-vec3 lightPosWorld = vec3(-3.0, 8.0, 7.0);
+vec3 lightPosWorld = vec3(3.0, 2.0, -3.0);
 vec3 camPosWorld = vec3(0.93, 0.47, -1.51);
 float zNear = 0.1;
 float zFar  = 5.0;
@@ -115,11 +115,12 @@ void main()
     vec3 refrColor = vec3(texture( env, refrDir ));
 
     // combine refraction and reflection components based on fresnel ratio
+    fresnelRatio = mix(fresnelRatio, 1.0, 0.2);
     vec3 difColor = mix(refrColor, reflColor, fresnelRatio);
 
     // make the water more blue. for fun
     vec3 waterColor = vec3(0, 0.5, 1.0) * 0.5;
-    difColor = mix(difColor, waterColor, 0.2);
+    difColor = mix(difColor, waterColor, 0.1);
 
     // add the specular highlights
     vec3 specColor = vec3(1.0, 1.0, 1.0);

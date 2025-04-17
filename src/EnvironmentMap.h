@@ -13,18 +13,30 @@ class EnvironmentMap
         // *******
         // Texture
         // *******
+        // std::vector<unsigned char> positiveX;
+        // lodepng::decode(positiveX, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posx.png");
+        // std::vector<unsigned char> negativeX;
+        // lodepng::decode(negativeX, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negx.png");
+        // std::vector<unsigned char> positiveY;
+        // lodepng::decode(positiveY, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posy.png");
+        // std::vector<unsigned char> negativeY;
+        // lodepng::decode(negativeY, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negy.png");
+        // std::vector<unsigned char> positiveZ;
+        // lodepng::decode(positiveZ, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posz.png");
+        // std::vector<unsigned char> negativeZ;
+        // lodepng::decode(negativeZ, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negz.png");
         std::vector<unsigned char> positiveX;
-        lodepng::decode(positiveX, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posx.png");
+        lodepng::decode(positiveX, m_imageWidth, m_imageHeight, "../assets/sky07/posx.png");
         std::vector<unsigned char> negativeX;
-        lodepng::decode(negativeX, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negx.png");
+        lodepng::decode(negativeX, m_imageWidth, m_imageHeight, "../assets/sky07/negx.png");
         std::vector<unsigned char> positiveY;
-        lodepng::decode(positiveY, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posy.png");
+        lodepng::decode(positiveY, m_imageWidth, m_imageHeight, "../assets/sky07/posy.png");
         std::vector<unsigned char> negativeY;
-        lodepng::decode(negativeY, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negy.png");
+        lodepng::decode(negativeY, m_imageWidth, m_imageHeight, "../assets/sky07/negy.png");
         std::vector<unsigned char> positiveZ;
-        lodepng::decode(positiveZ, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_posz.png");
+        lodepng::decode(positiveZ, m_imageWidth, m_imageHeight, "../assets/sky07/posz.png");
         std::vector<unsigned char> negativeZ;
-        lodepng::decode(negativeZ, m_imageWidth, m_imageHeight, "../assets/cubemap/cubemap_negz.png");
+        lodepng::decode(negativeZ, m_imageWidth, m_imageHeight, "../assets/sky07/negz.png");
 
         glGenTextures(1, &m_textureID);
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureID);
