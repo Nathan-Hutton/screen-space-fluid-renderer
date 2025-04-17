@@ -39,6 +39,7 @@ cy::GLSLProgram causticRenderProg;
 cy::GLRenderTexture2D causticMap;
 cy::GLRenderTexture2D quickBlur;
 cy::GLSLProgram copyProg;
+cy::GLSLProgram causOverlayProg;
 
 bool run = false;
 
@@ -175,6 +176,8 @@ int main(int argc, char** argv)
     quickBlur.Initialize(false, 3, screenWidth/4, screenHeight/4);
     quickBlur.SetTextureFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
     copyProg.BuildFiles("../shaders/copy.vert", "../shaders/copy.frag");
+
+    causOverlayProg.BuildFiles("../shaders/overlay.vert", "../shaders/overlay.frag");
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glutDisplayFunc(renderScene);
@@ -424,6 +427,19 @@ void renderScene()
 
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
+
+    // render floor plane on top of everything else but only the caustics
+    causOverlayProg.Bind();
+    causOverlayProg.SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
+    causOverlayProg.SetUniform("causticMap", 0);
+    causOverlayProg.SetUniformMatrix4("lvp", &lvp[0]);
+    causticMap.BindTexture(0);
+
+    floorPlane.Bind();
+	glDepthFunc(GL_GEQUAL);
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+	glDepthFunc(GL_LEQUAL);
+    floorPlane.Unbind();
 
     environmentMap.render(viewProjectionInverse);
 
