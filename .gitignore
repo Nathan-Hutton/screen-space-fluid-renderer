@@ -1,4 +1,5 @@
 build/*
+.vscode/*
 data/Armadillo/*
 data/DamBreakBunny/*
 data/DamBreakLucy/*
