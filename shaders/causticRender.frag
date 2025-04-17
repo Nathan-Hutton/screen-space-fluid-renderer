@@ -20,5 +20,7 @@ void main()
     //     color = vec4(0, 1, 0, 1);
     //     return;
     // }
-    // color = vec4(myColor, 1);
+
+    // color = vec4(0, 1, 0, 1);
+    // color = vec4(testPos, 1);
 }

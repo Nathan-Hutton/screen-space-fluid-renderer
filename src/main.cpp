@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     lightCam = Camera(screenWidth, screenHeight);
     lightCam.SetFarPlane(15.0);
     // light view parameters
-    cy::Vec4f lightPos = cy::Vec4f(2.5, 4.0, -1.5, 1.0);
+    cy::Vec4f lightPos = cy::Vec4f(2.5, 2.0, -1.5, 1.0);
     cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(0.5, 0.0, 0.5), cy::Vec3f(0.0, 1.0, 0.0));
     cy::Matrix4f lightProjMatrix = lightCam.GetProj();
     lvp = lightProjMatrix * lightViewMatrix;
@@ -383,8 +383,6 @@ void renderScene()
 
     // let's draw some caustics baby
     causticRenderProg.Bind();
-    // lgtPrjNrmBuf.BindTexture(0);
-    // posMapBuf.BindTexture(1);
     sim.RenderPoints(causticRenderProg, viewProjectionTransform, lvp, lgtPrjNrmBuf, posMapBuf);
 
     // ------------------------------- finished caustics -------------------------- //
