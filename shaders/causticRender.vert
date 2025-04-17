@@ -17,7 +17,7 @@ out vec3 testPos;
 out vec2 uv;
 out float render;
 
-vec3 worldLightPos = vec3(5.0, 2.0, -3.0);
+vec3 worldLightPos = vec3(2.5, 2.0, -1.5);
 float eta = 1.0/1.33;
 
 void main()
@@ -25,6 +25,7 @@ void main()
     // world pos
     vec4 worldPos = translate * vec4(pos, 1);
     render = 1.0;
+    // testPos = vec3(1, 0, 1);
 
     // particle projected into light view
     vec4 lvpPos = lvp * translate * vec4(pos, 1);
@@ -35,19 +36,20 @@ void main()
     uv = uv / 2.0 + 0.5;
     vec3 norm = texture2D(normalMap, uv).xyz;
 
-    vec3 viewDir = normalize(vec3(worldLightPos - lvpPos.xyz));
+    vec3 viewDir = normalize(vec3(worldLightPos - worldPos.xyz));
     vec3 refrDir = normalize(refract( -viewDir, norm, eta));
+    // refrDir *= vec3(-1, 1, 1);
 
     // initial estimate
-    vec3 p1 = worldPos.xyz + refrDir * 1.0; // world space estimate
+    vec3 p1 = worldPos.xyz + refrDir * 0.1; // world space estimate
     vec4 p1_proj = lvp * vec4(p1, 1.0);
     vec2 fetchCoords1 = (p1_proj.xy / p1_proj.w) / 2.0 + 0.5;
     vec4 dest1 = texture2D(posMap, fetchCoords1);
+    float d1 = length(worldPos.xyz - dest1.xyz);
     if (dest1.w == 0.0) {
         render = 0.0;
         return;
     }
-    float d1 = length(lvpPos.xyz - dest1.xyx);
 
     // first (only?) real iteration
     vec3 p2 = worldPos.xyz + refrDir * d1;
@@ -58,7 +60,8 @@ void main()
         render = 0.0;
         return;
     }
-
-    vec4 outPos = mvp * vec4(dest2.xyz, 1.0);
+    vec4 outPos = lvp * vec4(dest2.xyz, 1.0);
+    // vec4 outPos = vec4(dest2.xyz, 1.0);
     gl_Position = outPos;
+    // testPos = vec3(dest1.w, dest1.w, dest1.w);
 }

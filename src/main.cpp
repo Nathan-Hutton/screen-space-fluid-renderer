@@ -36,6 +36,10 @@ cy::GLSLProgram posMapProg;     // program to render the pos map
 cy::GLRenderTexture2D lgtPrjNrmBuf;   // buffer for light projection normal map
 cy::GLSLProgram lgtPrjNrmProg;     // program to render the light projection normal map
 cy::GLSLProgram causticRenderProg;
+cy::GLRenderTexture2D causticMap;
+cy::GLRenderTexture2D quickBlur;
+cy::GLSLProgram copyProg;
+cy::GLSLProgram causOverlayProg;
 
 bool run = false;
 
@@ -65,6 +69,7 @@ int main(int argc, char** argv)
 	glDepthFunc(GL_LEQUAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glPointSize(2.0);
 
     // camera initialization
     cam = Camera(screenWidth, screenHeight);
@@ -148,15 +153,16 @@ int main(int argc, char** argv)
     lightCam = Camera(screenWidth, screenHeight);
     lightCam.SetFarPlane(15.0);
     // light view parameters
-    cy::Vec4f lightPos = cy::Vec4f(5.0, 2.0, -3.0, 1.0);
-    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(), cy::Vec3f(0.0, 1.0, 0.0));
+    cy::Vec4f lightPos = cy::Vec4f(2.5, 2.0, -1.5, 1.0);
+    cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(0.5, 0.0, 0.5), cy::Vec3f(0.0, 1.0, 0.0));
     cy::Matrix4f lightProjMatrix = lightCam.GetProj();
     lvp = lightProjMatrix * lightViewMatrix;
     lightProjInv = lightProjMatrix.GetInverse();
     lightViewInv = lightViewMatrix.GetInverse();
 
     // position map buffer and program
-    posMapBuf.Initialize(false, 4, screenWidth, screenHeight);
+    posMapBuf.Initialize(false);
+    posMapBuf.Resize(4, screenWidth, screenHeight, cy::GL::TYPE_FLOAT);
     posMapProg.BuildFiles("../shaders/posMap.vert", "../shaders/posMap.frag");
 
     // caustic map buffer and program
@@ -165,6 +171,13 @@ int main(int argc, char** argv)
     lgtPrjNrmProg.BuildFiles("../shaders/lgtPrjNormals.vert", "../shaders/lgtPrjNormals.frag");
 
     causticRenderProg.BuildFiles("../shaders/causticRender.vert", "../shaders/causticRender.frag");
+    causticMap.Initialize(false, 3, screenWidth, screenHeight);
+    causticMap.SetTextureFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+    quickBlur.Initialize(false, 3, screenWidth/4, screenHeight/4);
+    quickBlur.SetTextureFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+    copyProg.BuildFiles("../shaders/copy.vert", "../shaders/copy.frag");
+
+    causOverlayProg.BuildFiles("../shaders/overlay.vert", "../shaders/overlay.frag");
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glutDisplayFunc(renderScene);
@@ -264,12 +277,89 @@ void renderScene()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // ----------------------------- caustics --------------------------- //
+    // floor plane positions map for caustics
+    posMapBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    posMapProg.Bind();
+    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
+    posMapBuf.Unbind();
+
+    // create caustics texture, start with light depth buffer
+    depthBuf.Bind();
+    glClear(GL_DEPTH_BUFFER_BIT);
+    
+    depthProg.Bind();
+    sim.Render(lvp, depthProg);
+    depthBuf.Unbind();
+
+    // lets not even smooth this bad boy and go straight to getting the normals
+    // we can smooth later if we have to
+    lgtPrjNrmBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    lgtPrjNrmProg.Bind();
+    lgtPrjNrmProg.SetUniformMatrix4("invProjectionMatrix", &lightProjInv[0]);
+    lgtPrjNrmProg.SetUniformMatrix4("invViewMatrix", &lightViewInv[0]);
+    lgtPrjNrmProg.SetUniformMatrix4("lvp", &lvp[0]);
+    lgtPrjNrmProg.SetUniform("depthTex", 0);
+    lgtPrjNrmProg.SetUniform("posMap", 1);
+    lgtPrjNrmProg.SetUniform("imgW", imWidth);
+    lgtPrjNrmProg.SetUniform("imgH", imHeight);
+    depthBuf.BindTexture(0);
+    posMapBuf.BindTexture(1);
+
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    lgtPrjNrmBuf.Unbind();
+
+    // let's draw some caustics baby
+    causticMap.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    causticRenderProg.Bind();
+    sim.RenderPoints(causticRenderProg, viewProjectionTransform, lvp, lgtPrjNrmBuf, posMapBuf);
+    causticMap.Unbind();
+    causticMap.BuildTextureMipmaps();
+
+    // let's try some cheap blurring
+    quickBlur.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    copyProg.Bind();
+    copyProg.SetUniform("tex", 0);
+    causticMap.BindTexture(0);
+
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    quickBlur.Unbind();
+    quickBlur.BuildTextureMipmaps();
+
+    causticMap.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    quickBlur.BindTexture(0);
+    plane.Bind();
+    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
+    plane.Unbind();
+    causticMap.Unbind();
+    causticMap.BuildTextureMipmaps();
+
+    // ------------------------------- finished caustics -------------------------- //
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     // render the floor plane here
     cy::GLSLProgram* floorProg = floorPlane.GetProgram();
     floorProg->Bind();
     floorProg->SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
     floorProg->SetUniform("difTex", 0);
+    floorProg->SetUniform("causticMap", 1);
+    floorProg->SetUniformMatrix4("lvp", &lvp[0]);
     floorPlane.GetDif().Bind(0);
+    causticMap.BindTexture(1);
 
     floorPlane.Bind();
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
@@ -338,54 +428,19 @@ void renderScene()
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
 
-    /*// ----------------------------- caustics --------------------------- //
-    // floor plane positions map for caustics
-    posMapBuf.Bind();
-    glClear(GL_COLOR_BUFFER_BIT);
-    posMapProg.Bind();
-    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+    // render floor plane on top of everything else but only the caustics
+    causOverlayProg.Bind();
+    causOverlayProg.SetUniformMatrix4("mvp", &viewProjectionTransform[0]);
+    causOverlayProg.SetUniform("causticMap", 0);
+    causOverlayProg.SetUniformMatrix4("lvp", &lvp[0]);
+    causticMap.BindTexture(0);
 
     floorPlane.Bind();
+	glDepthFunc(GL_GEQUAL);
     glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+	glDepthFunc(GL_LEQUAL);
     floorPlane.Unbind();
-    posMapBuf.Unbind();
 
-    // create caustics texture, start with light depth buffer
-    depthBuf.Bind();
-    glClear(GL_DEPTH_BUFFER_BIT);
-    
-    depthProg.Bind();
-    sim.Render(lvp, depthProg);
-    depthBuf.Unbind();
-
-    // lets not even smooth this bad boy and go straight to getting the normals
-    // we can smooth later if we have to
-    lgtPrjNrmBuf.Bind();
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    lgtPrjNrmProg.Bind();
-    lgtPrjNrmProg.SetUniformMatrix4("invProjectionMatrix", &lightProjInv[0]);
-    lgtPrjNrmProg.SetUniformMatrix4("invViewMatrix", &lightViewInv[0]);
-    lgtPrjNrmProg.SetUniformMatrix4("lvp", &lvp[0]);
-    lgtPrjNrmProg.SetUniform("depthTex", 0);
-    lgtPrjNrmProg.SetUniform("posMap", 1);
-    lgtPrjNrmProg.SetUniform("imgW", imWidth);
-    lgtPrjNrmProg.SetUniform("imgH", imHeight);
-    depthBuf.BindTexture(0);
-    posMapBuf.BindTexture(1);
-
-    plane.Bind();
-    glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
-    plane.Unbind();
-    lgtPrjNrmBuf.Unbind();
-
-    // let's draw some caustics baby
-    causticRenderProg.Bind();
-    // lgtPrjNrmBuf.BindTexture(0);
-    // posMapBuf.BindTexture(1);
-    sim.RenderPoints(causticRenderProg, viewProjectionTransform, lvp, lgtPrjNrmBuf, posMapBuf);
-
-    // ------------------------------- finished caustics -------------------------- //*/
     environmentMap.render(viewProjectionInverse);
 
     glutSwapBuffers();
