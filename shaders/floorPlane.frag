@@ -20,7 +20,7 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth < closestDepth  ? 1.0 : 0.7;
+    float shadow = currentDepth < closestDepth  ? 1.0 : 0.85;
 
     return shadow;
 } 
@@ -28,25 +28,8 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 void main()
 {
 	vec4 difColor = texture(difTex, texCoord);
-	// vec2 uv = (shadowPos.xy) / 2.0 + 0.5;
-	// float d1 = shadowPos.z / shadowPos.w;
-	// float d2 = texture2D(depthMap, uv).x;
-
-	// vec4 myPos = shadowPos * vec4(0.5, 0.5, 0.5, 1.0);
-	// myPos += vec4(0.5, 0.5, 0.5, 0.0);
-
-	// float d1 = myPos.z / myPos.w;
-	// float d2 = texture2D(depthMap, myPos.xy).x;
-
-	// if ((d1 - d2) > 0.0) {
-	// 	color = vec4(1, 1, 1, 1);
-	// }
-	// else {
-	// 	color = vec4(0, 0, 0, 1);
-	// }
 
 	difColor *= ShadowCalculation(shadowPos);
-	// difColor *= textureProj(depthMap, shadowPos);
-	// color = vec4(difColor, 1);
+
 	color = vec4(difColor);
 }

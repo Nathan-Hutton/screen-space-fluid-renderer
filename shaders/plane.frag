@@ -16,7 +16,7 @@ uniform int imgH;
 // uniform float scale;
 // uniform vec4 lightView;
 
-vec3 lightPosWorld = vec3(2.5, 2.0, -1.5);
+vec3 lightPosWorld = vec3(2.5, 1.5, -1.5);
 vec3 camPosWorld = vec3(0.93, 0.47, -1.51);
 float zNear = 0.1;
 float zFar  = 5.0;

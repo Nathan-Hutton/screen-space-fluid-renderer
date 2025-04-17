@@ -42,6 +42,7 @@ cy::GLSLProgram copyProg;
 cy::GLSLProgram causOverlayProg;
 
 bool run = false;
+bool renderCaustics = false;
 
 GLuint renderCubeMap();
 void renderScene();
@@ -70,6 +71,10 @@ int main(int argc, char** argv)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // glPointSize(2.0);
+
+    if (argc == 2) {
+        renderCaustics = true;
+    }
 
     // camera initialization
     cam = Camera(screenWidth, screenHeight);
@@ -153,7 +158,7 @@ int main(int argc, char** argv)
     lightCam = Camera(screenWidth, screenHeight);
     lightCam.SetFarPlane(15.0);
     // light view parameters
-    cy::Vec4f lightPos = cy::Vec4f(2.5, 2.0, -1.5, 1.0);
+    cy::Vec4f lightPos = cy::Vec4f(2.5, 1.5, -1.5, 1.0);
     cy::Matrix4f lightViewMatrix = cy::Matrix4f().View(lightPos.XYZ(), cy::Vec3f(0.5, 0.0, 0.5), cy::Vec3f(0.0, 1.0, 0.0));
     cy::Matrix4f lightProjMatrix = lightCam.GetProj();
     lvp = lightProjMatrix * lightViewMatrix;
@@ -278,16 +283,6 @@ void renderScene()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // ----------------------------- caustics --------------------------- //
-    // floor plane positions map for caustics
-    posMapBuf.Bind();
-    glClear(GL_COLOR_BUFFER_BIT);
-    posMapProg.Bind();
-    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
-
-    floorPlane.Bind();
-    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
-    floorPlane.Unbind();
-    posMapBuf.Unbind();
 
     // create caustics texture, start with light depth buffer
     depthBuf.Bind();
@@ -297,6 +292,7 @@ void renderScene()
     sim.Render(lvp, depthProg);
     depthBuf.Unbind();
 
+    if (renderCaustics) {
     // lets not even smooth this bad boy and go straight to getting the normals
     // we can smooth later if we have to
     lgtPrjNrmBuf.Bind();
@@ -317,6 +313,17 @@ void renderScene()
     glDrawElements(GL_TRIANGLE_STRIP, plane.GetLength(), GL_UNSIGNED_INT, 0);
     plane.Unbind();
     lgtPrjNrmBuf.Unbind();
+
+    // floor plane positions map for caustics
+    posMapBuf.Bind();
+    glClear(GL_COLOR_BUFFER_BIT);
+    posMapProg.Bind();
+    posMapProg.SetUniformMatrix4("lvp", &lvp[0]);
+
+    floorPlane.Bind();
+    glDrawElements(GL_TRIANGLES, floorPlane.GetLength(), GL_UNSIGNED_INT, 0);
+    floorPlane.Unbind();
+    posMapBuf.Unbind();
 
     // let's draw some caustics baby
     causticMap.Bind();
@@ -347,7 +354,7 @@ void renderScene()
     plane.Unbind();
     causticMap.Unbind();
     causticMap.BuildTextureMipmaps();
-
+    }
     // ------------------------------- finished caustics -------------------------- //
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
