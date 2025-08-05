@@ -7,7 +7,7 @@
 
 ## Description
 
-An implementation of real-time rendering of cached fluid simulations. This is acheived in screen-space by generating a depth-map of the particle data and applying a narrow-range filter to refine the desired surface shape. The final render of the fluid surface includes realistic shading such as reflections, refraction, and shadows all at interactive speed.
+An OpenGL/GLSL implementation of real-time rendering of cached fluid simulations. This is acheived in screen-space by generating a depth-map of the particle data and applying a narrow-range filter to refine the desired surface shape. The final render of the fluid surface includes realistic shading such as reflections, refraction, and shadows all at interactive speed.
 
 Optionally, caustics lighting can also be rendered, which is calculated using a modified caustics mapping technique.
 
